@@ -120,6 +120,9 @@ const LINEUPS = {
         standY: 15,                  // 站位Y坐标
         desc: "站在A出生点左侧墙角", // 站位描述
         crosshair: "瞄准天空左上角", // 准星瞄准描述
+        standImg: "lineups/xxx_stand.jpg",  // 站位截图（可选，放在lineups目录）
+        aimImg: "lineups/xxx_aim.jpg",      // 瞄点截图（可选）
+        effectImg: "lineups/xxx_effect.jpg", // 效果截图（可选）
         video: ""                    // 视频链接（可选，留空则不显示按钮）
       }
     ],

@@ -478,11 +478,12 @@ body {
   color: var(--bg-dark);
 }
 
-/* 地图画布容器 */
+/* 地图布局 */
 .map-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 20px;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  align-items: start;
 }
 
 /* ==================== 地图宣传图 Banner ==================== */
@@ -542,12 +543,19 @@ body {
   position: relative;
 }
 
+/* 地图画布 - 尽可能大 */
 .map-canvas {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: calc(100vh - 240px);
+  min-height: 500px;
   position: relative;
   background: #0a1118;
   overflow: hidden;
+  cursor: grab;
+}
+
+.map-canvas.dragging {
+  cursor: grabbing;
 }
 
 .map-canvas svg {
@@ -556,11 +564,113 @@ body {
   display: block;
 }
 
-/* 地图图片模式 */
-.map-canvas.has-image {
-  background-image: var(--map-image);
+/* 缩放容器 - 包裹背景图和标记，一起缩放平移 */
+.map-zoom-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 地图图片模式 */
+.map-canvas.has-image .map-zoom-container {
+  /* background-image set via inline style */
+}
+
+/* SVG地图模式 */
+.map-zoom-container svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 缩放控件 */
+.zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 50;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(26, 35, 50, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: inherit;
+  backdrop-filter: blur(4px);
+}
+
+.zoom-btn:hover {
+  background: var(--accent);
+  color: var(--bg-dark);
+  border-color: var(--accent);
+}
+
+.zoom-btn:active {
+  transform: scale(0.92);
+}
+
+.zoom-level {
+  width: 36px;
+  height: 28px;
+  background: rgba(26, 35, 50, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+/* 攻防方向标签 */
+.map-side-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border-radius: 4px;
+  z-index: 40;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.map-side-label.attackers {
+  bottom: 12px;
+  background: rgba(255, 70, 85, 0.2);
+  color: #ff4655;
+  border: 1px solid rgba(255, 70, 85, 0.4);
+}
+
+.map-side-label.defenders {
+  top: 12px;
+  background: rgba(0, 212, 170, 0.2);
+  color: #00d4aa;
+  border: 1px solid rgba(0, 212, 170, 0.4);
 }
 
 /* 标记层 */
@@ -696,31 +806,44 @@ body {
   opacity: 1;
 }
 
-/* 英雄技能标记 */
+/* 英雄技能标记 - 小尺寸，按技能键位颜色区分 */
 .marker.agent-ability {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 2px solid;
-  background: var(--bg-dark);
+  border: 2px solid var(--ability-color, #ff4655);
+  background: rgba(15, 25, 35, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-bright);
   transition: all 0.2s;
+  z-index: 10;
+}
+
+.marker.agent-ability .ab-key {
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--ability-color, #ff4655);
+  line-height: 1;
 }
 
 .marker.agent-ability:hover {
-  transform: translate(-50%, -50%) scale(1.3);
-  box-shadow: 0 0 15px currentColor;
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 0 12px var(--ability-color, #ff4655);
+  z-index: 20;
+}
+
+.marker.agent-ability.highlighted {
+  transform: translate(-50%, -50%) scale(1.6);
+  box-shadow: 0 0 16px var(--ability-color, #ff4655);
+  z-index: 20;
+  animation: marker-pulse 1s ease-in-out infinite;
 }
 
 .marker.agent-ability .ab-label {
   position: absolute;
-  top: 28px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-dark);
@@ -732,10 +855,196 @@ body {
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
+  border: 1px solid var(--ability-color, var(--border));
 }
 
-.marker.agent-ability:hover .ab-label {
+.marker.agent-ability:hover .ab-label,
+.marker.agent-ability.highlighted .ab-label {
   opacity: 1;
+}
+
+/* 标记高亮动画 */
+@keyframes marker-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--ability-color, #ff4655); }
+  50% { box-shadow: 0 0 20px var(--ability-color, #ff4655); }
+}
+
+/* 球烟/线烟/穿墙标记高亮 */
+.marker.ball-smoke.highlighted .smoke-circle,
+.marker.line-smoke.highlighted,
+.marker.wallbang.highlighted {
+  filter: brightness(1.3);
+  animation: marker-pulse-generic 1s ease-in-out infinite;
+}
+
+@keyframes marker-pulse-generic {
+  0%, 100% { filter: brightness(1.2); }
+  50% { filter: brightness(1.6); }
+}
+
+/* 技能筛选按钮组 */
+.ability-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 选中英雄时的头部 */
+.lineup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.lineup-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lineup-header-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.lineup-header-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.lineup-change-btn {
+  padding: 4px 12px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.lineup-change-btn:hover {
+  background: var(--accent);
+  color: var(--bg-dark);
+  border-color: var(--accent);
+}
+
+/* 折叠的英雄列表 */
+.agent-list-collapsed {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.agent-list-collapsed:hover {
+  opacity: 1;
+}
+
+.agent-list-collapsed .agent-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 4px;
+}
+
+.agent-list-collapsed .agent-card {
+  padding: 4px;
+}
+
+.agent-list-collapsed .agent-card .agent-name,
+.agent-list-collapsed .agent-card .agent-en {
+  display: none;
+}
+
+.agent-list-collapsed .agent-card .agent-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.ability-btn {
+  padding: 4px 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.ability-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.ability-btn.active {
+  background: var(--ability-color, var(--accent));
+  border-color: var(--ability-color, var(--accent));
+  color: var(--bg-dark);
+}
+
+/* 详情面板图片 */
+.detail-image-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.detail-image {
+  width: 100%;
+  display: block;
+  background: var(--bg-dark);
+  cursor: zoom-in;
+}
+
+.detail-image:hover {
+  opacity: 0.9;
+}
+
+.detail-image-placeholder {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  background: var(--bg-dark);
+}
+
+/* 技能颜色图例 */
+.ability-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ability-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.ability-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid;
 }
 
 /* 站位标记 */
@@ -1116,11 +1425,17 @@ body {
 .legend-dot.line { background: var(--line-smoke-color); border: 1px solid var(--line-smoke-border); height: 4px; border-radius: 2px; width: 20px; }
 .legend-dot.wallbang { background: var(--wallbang-color); border: 2px solid #ffa500; transform: rotate(45deg); border-radius: 2px; }
 .legend-dot.stand { width: 10px; height: 10px; border: 2px solid var(--stand-color); border-radius: 50%; background: transparent; }
+.legend-dot.ability-dot { width: 16px; height: 16px; border: 2px solid; border-radius: 50%; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; }
 
 /* ==================== 响应式 ==================== */
 @media (max-width: 900px) {
   .map-layout {
     grid-template-columns: 1fr;
+  }
+
+  .map-canvas {
+    height: calc(100vh - 280px);
+    min-height: 400px;
   }
 
   .sidebar {
@@ -1141,6 +1456,11 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .map-canvas {
+    height: 60vh;
+    min-height: 350px;
+  }
+
   .tab-btn {
     font-size: 13px;
     padding: 10px 8px;
@@ -1148,6 +1468,23 @@ body {
 
   .detail-overlay {
     max-width: 100%;
+  }
+
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .zoom-level {
+    width: 32px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .map-side-label {
+    font-size: 10px;
+    padding: 3px 10px;
   }
 }
 

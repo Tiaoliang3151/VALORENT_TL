@@ -15,6 +15,27 @@
   let currentTab = "smokes"; // smokes | wallbangs | agents
   let currentAgent = null;
   let currentRoleFilter = "all";
+  let currentAbilityFilter = "all"; // all | C | Q | E | X | none
+
+  // 缩放/平移状态
+  let zoomLevel = 1;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartPanX = 0;
+  let dragStartPanY = 0;
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 5;
+
+  // 技能键位颜色
+  const ABILITY_COLORS = {
+    C: "#ffa500", // 先锋橙
+    Q: "#ff4655", // 决斗红
+    E: "#7b68ee", // 控场紫
+    X: "#00d4aa"  // 大招青
+  };
 
   // ==========================================
   // 路由
@@ -123,6 +144,11 @@
   function renderMapDetail() {
     const map = currentMap;
 
+    // 重置缩放状态
+    zoomLevel = 1;
+    panX = 0;
+    panY = 0;
+
     const html = `
       <div class="breadcrumb">
         <a href="#/">地图选择</a>
@@ -159,9 +185,19 @@
               </div>
             </div>
           ` : ""}
-          <div class="map-canvas" id="map-canvas">
-            ${map.image ? "" : generateMapSvg(map, false)}
-            <div class="marker-layer" id="marker-layer"></div>
+          <div class="map-canvas ${map.image ? "has-image" : ""}" id="map-canvas">
+            <div class="map-zoom-container" id="map-zoom-container">
+              ${map.image ? "" : generateMapSvg(map, false)}
+              <div class="marker-layer" id="marker-layer"></div>
+            </div>
+            <div class="map-side-label defenders">防守方 DEFENDERS</div>
+            <div class="map-side-label attackers">进攻方 ATTACKERS</div>
+            <div class="zoom-controls">
+              <button class="zoom-btn" id="zoom-in" title="放大">+</button>
+              <div class="zoom-level" id="zoom-level">100%</div>
+              <button class="zoom-btn" id="zoom-out" title="缩小">−</button>
+              <button class="zoom-btn" id="zoom-reset" title="重置" style="font-size:14px;">⟲</button>
+            </div>
           </div>
           <div class="legend" id="legend"></div>
         </div>
@@ -171,12 +207,10 @@
 
     app.innerHTML = html;
 
-    // 如果有地图图片，设置背景
+    // 如果有地图图片，设置缩放容器的背景
     if (map.image) {
-      const canvas = document.getElementById("map-canvas");
-      canvas.classList.add("has-image");
-      // 用内联background-image避免CSS相对路径问题
-      canvas.style.backgroundImage = `url("${map.image}")`;
+      const zoomContainer = document.getElementById("map-zoom-container");
+      zoomContainer.style.backgroundImage = `url("${map.image}")`;
     }
 
     // 绑定标签切换
@@ -190,10 +224,189 @@
       });
     });
 
+    // 初始化缩放/平移
+    initZoomPan();
+
     // 渲染标记和侧边栏
     renderMarkers();
     renderSidebar();
     renderLegend();
+  }
+
+  // ==========================================
+  // 缩放/平移功能
+  // ==========================================
+  function initZoomPan() {
+    const canvas = document.getElementById("map-canvas");
+    if (!canvas) return;
+
+    // 按钮缩放
+    const zoomInBtn = document.getElementById("zoom-in");
+    const zoomOutBtn = document.getElementById("zoom-out");
+    const zoomResetBtn = document.getElementById("zoom-reset");
+
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setZoom(zoomLevel + 0.5, true);
+      });
+    }
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setZoom(zoomLevel - 0.5, true);
+      });
+    }
+    if (zoomResetBtn) {
+      zoomResetBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        resetZoom();
+      });
+    }
+
+    // 滚轮缩放
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.3 : 0.3;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      setZoom(zoomLevel + delta, false, mouseX, mouseY);
+    }, { passive: false });
+
+    // 拖拽平移
+    canvas.addEventListener("mousedown", (e) => {
+      // 不拦截标记点击
+      if (e.target.closest(".marker") || e.target.closest(".zoom-btn")) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartPanX = panX;
+      dragStartPanY = panY;
+      canvas.classList.add("dragging");
+      e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const dx = (e.clientX - dragStartX) / zoomLevel;
+      const dy = (e.clientY - dragStartY) / zoomLevel;
+      panX = dragStartPanX + dx;
+      panY = dragStartPanY + dy;
+      updateZoomTransform();
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (isDragging) {
+        isDragging = false;
+        canvas.classList.remove("dragging");
+      }
+    });
+
+    // 触摸缩放（双指）
+    let touchStartDist = 0;
+    let touchStartZoom = 1;
+    let touchStartPanX = 0;
+    let touchStartPanY = 0;
+    let touchStartCenterX = 0;
+    let touchStartCenterY = 0;
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.target.closest(".marker") || e.target.closest(".zoom-btn")) return;
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        touchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        touchStartZoom = zoomLevel;
+        const rect = canvas.getBoundingClientRect();
+        touchStartCenterX = ((t1.clientX + t2.clientX) / 2) - rect.left;
+        touchStartCenterY = ((t1.clientY + t2.clientY) / 2) - rect.top;
+        touchStartPanX = panX;
+        touchStartPanY = panY;
+      } else if (e.touches.length === 1) {
+        const t = e.touches[0];
+        isDragging = true;
+        dragStartX = t.clientX;
+        dragStartY = t.clientY;
+        dragStartPanX = panX;
+        dragStartPanY = panY;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        if (touchStartDist > 0) {
+          const scale = dist / touchStartDist;
+          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, touchStartZoom * scale));
+          zoomLevel = newZoom;
+          updateZoomTransform();
+        }
+      } else if (e.touches.length === 1 && isDragging) {
+        e.preventDefault();
+        const t = e.touches[0];
+        const dx = (t.clientX - dragStartX) / zoomLevel;
+        const dy = (t.clientY - dragStartY) / zoomLevel;
+        panX = dragStartPanX + dx;
+        panY = dragStartPanY + dy;
+        updateZoomTransform();
+      }
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", () => {
+      isDragging = false;
+      touchStartDist = 0;
+    });
+  }
+
+  function setZoom(newZoom, animate, centerX, centerY) {
+    const oldZoom = zoomLevel;
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+
+    if (centerX !== undefined && centerY !== undefined) {
+      // 以鼠标位置为中心缩放
+      const canvas = document.getElementById("map-canvas");
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = centerX || rect.width / 2;
+        const cy = centerY || rect.height / 2;
+        // 调整pan使得鼠标位置保持不变
+        const zoomRatio = zoomLevel / oldZoom;
+        panX = cx / oldZoom - (cx / zoomLevel) + panX * (1 / zoomRatio) * zoomRatio;
+        panY = cy / oldZoom - (cy / zoomLevel) + panY * (1 / zoomRatio) * zoomRatio;
+      }
+    }
+
+    updateZoomTransform(animate);
+  }
+
+  function resetZoom() {
+    zoomLevel = 1;
+    panX = 0;
+    panY = 0;
+    updateZoomTransform(true);
+  }
+
+  function updateZoomTransform(animate) {
+    const container = document.getElementById("map-zoom-container");
+    const levelDisplay = document.getElementById("zoom-level");
+    if (!container) return;
+
+    if (animate) {
+      container.style.transition = "transform 0.3s ease";
+    } else {
+      container.style.transition = "none";
+    }
+
+    container.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
+
+    if (levelDisplay) {
+      levelDisplay.textContent = Math.round(zoomLevel * 100) + "%";
+    }
   }
 
   // ==========================================
@@ -289,6 +502,7 @@
   function createBallSmokeMarker(smoke, isAgentLineup) {
     const marker = document.createElement("div");
     marker.className = "marker ball-smoke";
+    marker.dataset.itemId = smoke.id;
     marker.style.left = smoke.x + "%";
     marker.style.top = smoke.y + "%";
 
@@ -298,7 +512,8 @@
       <div class="smoke-label">${smoke.name}</div>
     `;
 
-    marker.addEventListener("click", () => {
+    marker.addEventListener("click", (e) => {
+      e.stopPropagation();
       showDetail(smoke, isAgentLineup ? "lineup" : "smoke");
     });
 
@@ -308,14 +523,16 @@
   function createLineSmokeMarker(smoke, isAgentLineup) {
     const marker = document.createElement("div");
     marker.className = "marker line-smoke";
+    marker.dataset.itemId = smoke.id;
     marker.style.left = smoke.x + "%";
     marker.style.top = smoke.y + "%";
     marker.style.width = (smoke.length || 20) + "%";
-    marker.style.transform = `rotate(${smoke.angle || 0}deg)`;
+    marker.style.transform = `translateY(-50%) rotate(${smoke.angle || 0}deg)`;
 
     marker.innerHTML = `<div class="smoke-label">${smoke.name}</div>`;
 
-    marker.addEventListener("click", () => {
+    marker.addEventListener("click", (e) => {
+      e.stopPropagation();
       showDetail(smoke, isAgentLineup ? "lineup" : "smoke");
     });
 
@@ -325,27 +542,22 @@
   function createAbilityMarker(smoke, isAgentLineup) {
     const marker = document.createElement("div");
     marker.className = "marker agent-ability";
+    marker.dataset.itemId = smoke.id;
 
-    const agent = currentAgent ? AGENTS.find((a) => a.id === currentAgent) : null;
-    const roleColor = agent ? ROLES[agent.role].color : "#ff4655";
+    const abilityKey = smoke.ability || "E";
+    const abilityColor = ABILITY_COLORS[abilityKey] || "#ff4655";
 
     marker.style.left = smoke.x + "%";
     marker.style.top = smoke.y + "%";
-    marker.style.borderColor = roleColor;
-    marker.style.color = roleColor;
-
-    const radius = smoke.radius || 4;
-    marker.style.width = (radius * 2 + 2) + "%";
-    marker.style.height = (radius * 2 + 2) + "%";
-    marker.style.maxWidth = "30px";
-    marker.style.maxHeight = "30px";
+    marker.style.setProperty("--ability-color", abilityColor);
 
     marker.innerHTML = `
-      <span>${smoke.ability}</span>
+      <span class="ab-key">${abilityKey}</span>
       <div class="ab-label">${smoke.name}</div>
     `;
 
-    marker.addEventListener("click", () => {
+    marker.addEventListener("click", (e) => {
+      e.stopPropagation();
       showDetail(smoke, "lineup");
     });
 
@@ -382,12 +594,14 @@
     wallbangs.forEach((wb) => {
       const marker = document.createElement("div");
       marker.className = "marker wallbang";
+      marker.dataset.itemId = wb.id;
       marker.style.left = wb.x + "%";
       marker.style.top = wb.y + "%";
 
       marker.innerHTML = `<div class="wb-label">${wb.name}</div>`;
 
-      marker.addEventListener("click", () => {
+      marker.addEventListener("click", (e) => {
+        e.stopPropagation();
         showDetail(wb, "wallbang");
       });
 
@@ -397,8 +611,7 @@
 
   // 英雄技能标记
   function renderAgentMarkers(layer) {
-    if (!currentAgent) {
-      // 没有选择英雄时，显示有数据的英雄快速选择提示
+    if (!currentAgent || currentAbilityFilter === "none") {
       return;
     }
 
@@ -407,11 +620,20 @@
       return;
     }
 
+    // 根据技能筛选过滤
+    const filteredLineups = currentAbilityFilter === "all"
+      ? lineups
+      : lineups.filter((l) => l.ability === currentAbilityFilter);
+
+    if (filteredLineups.length === 0) {
+      return;
+    }
+
     const agent = AGENTS.find((a) => a.id === currentAgent);
     if (!agent) return;
 
-    // 检查英雄是否有烟雾类技能
-    renderSmokeMarkers(layer, lineups, true);
+    // 渲染筛选后的点位
+    renderSmokeMarkers(layer, filteredLineups, true);
   }
 
   // ==========================================
@@ -504,18 +726,50 @@
       const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
 
       if (lineups.length > 0) {
-        lineupListHtml = `
-          <div class="sidebar-title" style="margin-top: 16px;">
-            ${agent.name} 技能点位 (${lineups.length})
+        // 统计各技能数量
+        const abilityCounts = {};
+        lineups.forEach((l) => {
+          const k = l.ability || "E";
+          abilityCounts[k] = (abilityCounts[k] || 0) + 1;
+        });
+
+        // 技能筛选按钮
+        const abilityFilterHtml = `
+          <div class="ability-filter">
+            <button class="ability-btn ${currentAbilityFilter === "all" ? "active" : ""}" data-ability="all">全部 (${lineups.length})</button>
+            ${Object.entries(abilityCounts).map(([key, count]) => `
+              <button class="ability-btn ${currentAbilityFilter === key ? "active" : ""}"
+                      data-ability="${key}"
+                      style="--ability-color: ${ABILITY_COLORS[key] || "#ff4655"}">
+                ${key} (${count})
+              </button>
+            `).join("")}
+            <button class="ability-btn ${currentAbilityFilter === "none" ? "active" : ""}" data-ability="none">隐藏</button>
           </div>
+        `;
+
+        lineupListHtml = `
+          <div class="lineup-header">
+            <div class="lineup-header-info">
+              <div class="lineup-header-name">${agent.name}</div>
+              <div class="lineup-header-count">${lineups.length} 个点位</div>
+            </div>
+            <button class="lineup-change-btn" id="change-agent-btn">更换英雄</button>
+          </div>
+          ${abilityFilterHtml}
           <div class="info-list">
-            ${lineups.map((l) => renderInfoItem(l, getTypeLabel(l.type), l.ability)).join("")}
+            ${(currentAbilityFilter === "all" ? lineups : currentAbilityFilter === "none" ? [] : lineups.filter((l) => l.ability === currentAbilityFilter))
+              .map((l) => renderInfoItem(l, getTypeLabel(l.type), l.ability)).join("")}
           </div>
         `;
       } else {
         lineupListHtml = `
-          <div class="sidebar-title" style="margin-top: 16px;">
-            ${agent.name} 技能点位
+          <div class="lineup-header">
+            <div class="lineup-header-info">
+              <div class="lineup-header-name">${agent.name}</div>
+              <div class="lineup-header-count">暂无数据</div>
+            </div>
+            <button class="lineup-change-btn" id="change-agent-btn">更换英雄</button>
           </div>
           <div class="empty-state">
             暂无该英雄在此地图的点位数据
@@ -525,7 +779,11 @@
       }
     }
 
-    return roleFilterHtml + agentListHtml + lineupListHtml;
+    // 选中英雄时：lineup信息在顶部，英雄列表在下方（可折叠）
+    if (currentAgent) {
+      return lineupListHtml + '<div class="agent-list-collapsed">' + roleFilterHtml + agentListHtml + '</div>';
+    }
+    return roleFilterHtml + agentListHtml;
   }
 
   function renderInfoItem(item, typeLabel, abilityKey) {
@@ -579,14 +837,33 @@
         { cls: "line", label: "线烟" },
         { cls: "stand", label: "站位" }
       ];
+      // 如果选了英雄，加上技能键位图例
+      if (currentAgent) {
+        const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+        const abilities = [...new Set(lineups.map((l) => l.ability))];
+        abilities.forEach((ab) => {
+          items.push({ cls: "ability-" + ab, label: ab + "键", abilityKey: ab });
+        });
+      }
     }
 
-    legend.innerHTML = items.map((item) => `
-      <div class="legend-item">
-        <div class="legend-dot ${item.cls}"></div>
-        <span>${item.label}</span>
-      </div>
-    `).join("");
+    legend.innerHTML = items.map((item) => {
+      if (item.abilityKey) {
+        const color = ABILITY_COLORS[item.abilityKey] || "#ff4655";
+        return `
+          <div class="legend-item">
+            <div class="legend-dot ability-dot" style="border-color: ${color}; color: ${color};">${item.abilityKey}</div>
+            <span>${item.label}</span>
+          </div>
+        `;
+      }
+      return `
+        <div class="legend-item">
+          <div class="legend-dot ${item.cls}"></div>
+          <span>${item.label}</span>
+        </div>
+      `;
+    }).join("");
   }
 
   // ==========================================
@@ -601,6 +878,26 @@
       });
     });
 
+    // 技能筛选
+    app.querySelectorAll(".ability-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentAbilityFilter = btn.dataset.ability;
+        renderMarkers();
+        renderSidebar();
+      });
+    });
+
+    // 更换英雄按钮
+    const changeBtn = document.getElementById("change-agent-btn");
+    if (changeBtn) {
+      changeBtn.addEventListener("click", () => {
+        currentAgent = null;
+        currentAbilityFilter = "all";
+        renderMarkers();
+        renderSidebar();
+      });
+    }
+
     // 英雄选择
     app.querySelectorAll(".agent-card").forEach((card) => {
       card.addEventListener("click", () => {
@@ -610,31 +907,25 @@
           currentAgent = null;
         } else {
           currentAgent = agentId;
+          currentAbilityFilter = "all";
         }
         renderMarkers();
         renderSidebar();
       });
     });
 
-    // 信息项点击
+    // 信息项点击 - 弹出详情
     app.querySelectorAll(".info-item").forEach((item) => {
       item.addEventListener("click", () => {
         const itemId = item.dataset.itemId;
-        highlightMarker(itemId);
+        highlightAndShowDetail(itemId);
       });
     });
   }
 
-  // 高亮标记
-  function highlightMarker(itemId) {
-    // 移除之前的高亮
-    app.querySelectorAll(".marker").forEach((m) => {
-      m.style.zIndex = "10";
-    });
-
-    // 找到对应标记并高亮
-    const markers = app.querySelectorAll(".marker");
-    // 简单的闪烁效果
+  // 高亮标记并显示详情
+  function highlightAndShowDetail(itemId) {
+    // 高亮侧边栏项
     const infoItems = app.querySelectorAll(".info-item");
     infoItems.forEach((i) => i.classList.remove("highlighted"));
     const currentItem = app.querySelector(`.info-item[data-item-id="${itemId}"]`);
@@ -642,6 +933,42 @@
       currentItem.classList.add("highlighted");
       currentItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
+
+    // 高亮地图标记
+    app.querySelectorAll(".marker").forEach((m) => {
+      m.classList.remove("highlighted");
+    });
+    const marker = app.querySelector(`.marker[data-item-id="${itemId}"]`);
+    if (marker) {
+      marker.classList.add("highlighted");
+    }
+
+    // 查找数据并显示详情
+    const item = findItemById(itemId);
+    if (item) {
+      let type = "smoke";
+      if (currentTab === "wallbangs") type = "wallbang";
+      else if (currentTab === "agents") type = "lineup";
+      showDetail(item, type);
+    }
+  }
+
+  // 根据ID查找数据项
+  function findItemById(itemId) {
+    if (currentTab === "smokes") {
+      return currentMap.commonSmokes.find((s) => s.id === itemId);
+    } else if (currentTab === "wallbangs") {
+      return currentMap.wallbangs.find((w) => w.id === itemId);
+    } else if (currentTab === "agents" && currentAgent) {
+      const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+      return lineups.find((l) => l.id === itemId);
+    }
+    return null;
+  }
+
+  // 保留旧函数名兼容（高亮地图标记）
+  function highlightMarker(itemId) {
+    highlightAndShowDetail(itemId);
   }
 
   // ==========================================
@@ -697,6 +1024,8 @@
           <div class="detail-value">${smoke.length}% / ${smoke.angle}度</div>
         </div>
       ` : ""}
+
+      ${renderDetailImageSection("效果图", smoke.effectImg)}
     `;
   }
 
@@ -716,6 +1045,8 @@
         <div class="detail-label">坐标</div>
         <div class="detail-value">X: ${wb.x}%, Y: ${wb.y}%</div>
       </div>
+
+      ${renderDetailImageSection("效果图", wb.effectImg)}
     `;
   }
 
@@ -778,11 +1109,29 @@
         </div>
       ` : ""}
 
+      ${renderDetailImageSection("站位图", lineup.standImg)}
+      ${renderDetailImageSection("瞄点图", lineup.aimImg)}
+      ${renderDetailImageSection("效果图", lineup.effectImg)}
+
       ${lineup.video ? `
         <div class="detail-video">
           <a href="${lineup.video}" target="_blank">观看视频教学</a>
         </div>
       ` : ""}
+    `;
+  }
+
+  // 渲染详情图片区块
+  function renderDetailImageSection(label, imgPath) {
+    if (!imgPath) return "";
+    return `
+      <div class="detail-section">
+        <div class="detail-label">${label}</div>
+        <div class="detail-image-wrapper">
+          <img src="${imgPath}" alt="${label}" class="detail-image" 
+               onerror="this.parentElement.innerHTML='<div class=\\'detail-image-placeholder\\'>图片未找到: ${imgPath}</div>'">
+        </div>
+      </div>
     `;
   }
 
