@@ -58,18 +58,45 @@
         <button class="home-placeholder-cta" id="home-cta-btn">
           选择地图开始查询
         </button>
-        <div class="home-placeholder-hint">点击上方按钮或右上角"地图选择"下拉菜单</div>
+        <div class="home-placeholder-hint">点击按钮选择地图，或使用右上角下拉菜单</div>
+      </div>
+      <div class="home-map-section" id="home-map-section">
+        <h2 class="home-map-section-title">选择地图</h2>
+        <div class="map-grid">
+          ${MAPS.map((map) => renderMapCard(map)).join("")}
+        </div>
       </div>
     `;
     app.innerHTML = html;
 
-    // 首页按钮点击：打开导航栏下拉菜单
+    // 首页按钮点击：展开/收起地图网格
     const ctaBtn = document.getElementById("home-cta-btn");
-    if (ctaBtn) {
+    const mapSection = document.getElementById("home-map-section");
+    if (ctaBtn && mapSection) {
       ctaBtn.addEventListener("click", () => {
-        openNavDropdown();
+        const isOpen = mapSection.classList.contains("open");
+        if (isOpen) {
+          mapSection.classList.remove("open");
+          ctaBtn.textContent = "选择地图开始查询";
+          // 滚动回顶部
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          mapSection.classList.add("open");
+          ctaBtn.textContent = "收起地图列表";
+          // 平滑滚动到地图列表
+          setTimeout(() => {
+            mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
       });
     }
+
+    // 绑定地图卡片点击事件
+    app.querySelectorAll(".map-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        window.location.hash = `/map/${card.dataset.mapId}`;
+      });
+    });
   }
 
   function renderMapCard(map) {

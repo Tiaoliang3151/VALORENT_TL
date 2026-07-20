@@ -251,6 +251,29 @@ body {
   opacity: 0.6;
 }
 
+/* ==================== 首页地图展开区 ==================== */
+.home-map-section {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+  padding: 0 24px;
+}
+
+.home-map-section.open {
+  max-height: 3000px;
+  opacity: 1;
+  padding: 0 24px 48px;
+}
+
+.home-map-section-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
 @media (max-width: 600px) {
   .home-placeholder-title {
     font-size: 28px;
