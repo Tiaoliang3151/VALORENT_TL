@@ -151,6 +151,14 @@
 
       <div class="map-layout">
         <div class="map-canvas-wrapper">
+          ${map.splash ? `
+            <div class="map-splash-banner" style="background-image: url('${map.splash}')">
+              <div class="map-splash-overlay">
+                <div class="map-splash-name">${map.name}</div>
+                <div class="map-splash-en">${map.enName.toUpperCase()}</div>
+              </div>
+            </div>
+          ` : ""}
           <div class="map-canvas" id="map-canvas">
             ${map.image ? "" : generateMapSvg(map, false)}
             <div class="marker-layer" id="marker-layer"></div>
@@ -167,7 +175,8 @@
     if (map.image) {
       const canvas = document.getElementById("map-canvas");
       canvas.classList.add("has-image");
-      canvas.style.setProperty("--map-image", `url(${map.image})`);
+      // 用内联background-image避免CSS相对路径问题
+      canvas.style.backgroundImage = `url("${map.image}")`;
     }
 
     // 绑定标签切换
