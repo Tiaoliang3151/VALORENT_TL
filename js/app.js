@@ -161,6 +161,10 @@
           <h2>${map.name}</h2>
           <span class="en">${map.enName}</span>
         </div>
+        <button class="edit-mode-btn" id="edit-mode-btn">
+          <span class="edit-mode-icon">✎</span>
+          <span>编辑模式</span>
+        </button>
       </div>
 
       <div class="tab-bar">
@@ -223,6 +227,36 @@
         renderMapDetail();
       });
     });
+
+    // 编辑模式按钮
+    const editBtn = document.getElementById("edit-mode-btn");
+    if (editBtn) {
+      // 如果有草稿，提示恢复
+      if (window.MapEditor && window.MapEditor.hasDraft(map.id)) {
+        editBtn.classList.add("has-draft");
+        editBtn.title = "有未保存的草稿，点击进入编辑模式";
+      }
+      editBtn.addEventListener("click", () => {
+        if (window.MapEditor) {
+          if (window.MapEditor.isActive()) {
+            window.MapEditor.exit();
+          } else {
+            // 检查是否有草稿
+            if (window.MapEditor.hasDraft(map.id)) {
+              if (confirm("发现该地图的编辑草稿，是否恢复？\n点击确定恢复草稿，取消则使用当前数据。")) {
+                window.MapEditor.restoreDraft(map.id);
+              }
+            }
+            window.MapEditor.enter();
+          }
+        }
+      });
+    }
+
+    // 如果编辑模式已激活，重新绑定画布事件
+    if (window.MapEditor && window.MapEditor.isActive()) {
+      // 编辑器会在enter后自己绑定
+    }
 
     // 初始化缩放/平移
     initZoomPan();
@@ -499,6 +533,9 @@
     });
   }
 
+  // 固定球烟半径（百分比）
+  const SMOKE_RADIUS = 6;
+
   function createBallSmokeMarker(smoke, isAgentLineup) {
     const marker = document.createElement("div");
     marker.className = "marker ball-smoke";
@@ -506,9 +543,9 @@
     marker.style.left = smoke.x + "%";
     marker.style.top = smoke.y + "%";
 
-    const radius = smoke.radius || 6;
     marker.innerHTML = `
-      <div class="smoke-circle" style="width: ${radius * 2}%; height: ${radius * 2}%;"></div>
+      <div class="smoke-range"></div>
+      <div class="smoke-center"></div>
       <div class="smoke-label">${smoke.name}</div>
     `;
 
@@ -975,6 +1012,12 @@
   // 详情面板
   // ==========================================
   function showDetail(item, type) {
+    // 编辑模式下调用编辑面板
+    if (window.MapEditor && window.MapEditor.isActive() && item.id) {
+      window.MapEditor.showEditPanel(item.id);
+      return;
+    }
+
     let html = `<button class="detail-close" onclick="document.getElementById('detail-overlay').classList.add('hidden')">&times;</button>`;
 
     if (type === "smoke") {
@@ -1227,5 +1270,27 @@
   // 初始化
   // ==========================================
   initNavDropdown();
+
+  // 暴露编辑器需要的接口
+  window.__APP__ = {
+    getMap: () => currentMap,
+    getTab: () => currentTab,
+    getAgent: () => currentAgent,
+    setAgent: (a) => { currentAgent = a; },
+    setAbilityFilter: (f) => { currentAbilityFilter = f; },
+    getLineups: () => LINEUPS,
+    rerender: () => renderMapDetail(),
+    renderMarkers: () => renderMarkers(),
+    renderSidebar: () => renderSidebar(),
+    getData: () => ({ MAPS, AGENTS, LINEUPS, ROLES }),
+    showDetail: (item, type) => showDetail(item, type),
+    ABILITY_COLORS: ABILITY_COLORS
+  };
+
+  // 编辑器数据更新后重新渲染
+  window.addEventListener("editor-data-updated", () => {
+    renderMapDetail();
+  });
+
   router();
 })();
