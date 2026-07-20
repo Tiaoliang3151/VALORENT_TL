@@ -15,8 +15,16 @@
         <span class="logo-text">战术查询</span>
       </a>
       <nav class="nav-links">
-        <a href="#/">地图选择</a>
-        <a href="https://github.com" target="_blank" class="nav-github">GitHub</a>
+        <div class="nav-dropdown" id="nav-map-dropdown">
+          <button class="nav-dropdown-btn" type="button">
+            <span>地图选择</span>
+            <span class="nav-dropdown-arrow">▾</span>
+          </button>
+          <div class="nav-dropdown-menu" id="nav-map-menu">
+            <!-- 地图列表由 app.js 动态生成 -->
+          </div>
+        </div>
+        <a href="https://github.com/Tiaoliang3151/VALORENT_TL" target="_blank" class="nav-github">GitHub</a>
       </nav>
     </div>
   </header>

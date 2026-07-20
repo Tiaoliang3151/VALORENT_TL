@@ -294,7 +294,7 @@ const MAPS = [
   },
   {
     id: "haven",
-    name: "义境空岛",
+    name: "隐世修所",
     enName: "Haven",
     sites: [
       { id: "A", x: 20, y: 40, label: "A点" },
@@ -344,7 +344,7 @@ const MAPS = [
       { id: "B", x: 75, y: 60, label: "B点" }
     ],
     image: "",
-    description: "经典三通道地图，中路有可加固的铁门。平衡性较好的地图。",
+    description: "威尼斯地图，中路有可加固的铁门。经典三通道平衡地图。",
     commonSmokes: [
       { id: "ascent_cs1", type: "ball", name: "A主烟", site: "A", x: 30, y: 35, radius: 7, desc: "封住A主道视野" },
       { id: "ascent_cs2", type: "ball", name: "A点烟", site: "A", x: 22, y: 42, radius: 6, desc: "封住A点内部" },
@@ -422,7 +422,7 @@ const MAPS = [
   },
   {
     id: "fracture",
-    name: " fracture",
+    name: "天漠之峡",
     enName: "Fracture",
     sites: [
       { id: "A", x: 30, y: 30, label: "A点" },

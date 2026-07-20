@@ -52,20 +52,24 @@
     currentAgent = null;
 
     const html = `
-      <h1 class="page-title">选择地图</h1>
-      <p class="page-subtitle">选择一张地图，查看常规烟位、穿墙点位和英雄技能释放点位</p>
-      <div class="map-grid">
-        ${MAPS.map((map) => renderMapCard(map)).join("")}
+      <div class="home-placeholder">
+        <div class="home-placeholder-title">无畏契约战术查询</div>
+        <div class="home-placeholder-subtitle">VALORANT Tactics Lookup</div>
+        <button class="home-placeholder-cta" id="home-cta-btn">
+          选择地图开始查询
+        </button>
+        <div class="home-placeholder-hint">点击上方按钮或右上角"地图选择"下拉菜单</div>
       </div>
     `;
     app.innerHTML = html;
 
-    // 绑定点击事件
-    app.querySelectorAll(".map-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        window.location.hash = `/map/${card.dataset.mapId}`;
+    // 首页按钮点击：打开导航栏下拉菜单
+    const ctaBtn = document.getElementById("home-cta-btn");
+    if (ctaBtn) {
+      ctaBtn.addEventListener("click", () => {
+        openNavDropdown();
       });
-    });
+    }
   }
 
   function renderMapCard(map) {
@@ -761,7 +765,82 @@
   });
 
   // ==========================================
+  // 导航栏下拉菜单
+  // ==========================================
+  function initNavDropdown() {
+    const dropdown = document.getElementById("nav-map-dropdown");
+    const btn = dropdown ? dropdown.querySelector(".nav-dropdown-btn") : null;
+    const menu = document.getElementById("nav-map-menu");
+    if (!dropdown || !btn || !menu) return;
+
+    // 生成地图列表
+    menu.innerHTML = `
+      <a class="nav-dropdown-item" href="#/" data-action="home">
+        <span>首页</span>
+        <span class="item-en">HOME</span>
+      </a>
+      <div class="nav-dropdown-divider"></div>
+      ${MAPS.map((map) => `
+        <a class="nav-dropdown-item" href="#/map/${map.id}" data-map-id="${map.id}">
+          <span>${map.name}</span>
+          <span class="item-en">${map.enName.toUpperCase()}</span>
+        </a>
+      `).join("")}
+    `;
+
+    // 按钮点击切换
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleNavDropdown();
+    });
+
+    // 点击菜单项后关闭
+    menu.addEventListener("click", (e) => {
+      const item = e.target.closest(".nav-dropdown-item");
+      if (item) {
+        closeNavDropdown();
+      }
+    });
+
+    // 点击页面其他地方关闭
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target)) {
+        closeNavDropdown();
+      }
+    });
+  }
+
+  function toggleNavDropdown() {
+    const btn = document.querySelector(".nav-dropdown-btn");
+    const menu = document.getElementById("nav-map-menu");
+    if (!btn || !menu) return;
+    const isOpen = menu.classList.contains("open");
+    if (isOpen) {
+      closeNavDropdown();
+    } else {
+      openNavDropdown();
+    }
+  }
+
+  function openNavDropdown() {
+    const btn = document.querySelector(".nav-dropdown-btn");
+    const menu = document.getElementById("nav-map-menu");
+    if (!btn || !menu) return;
+    menu.classList.add("open");
+    btn.classList.add("open");
+  }
+
+  function closeNavDropdown() {
+    const btn = document.querySelector(".nav-dropdown-btn");
+    const menu = document.getElementById("nav-map-menu");
+    if (!btn || !menu) return;
+    menu.classList.remove("open");
+    btn.classList.remove("open");
+  }
+
+  // ==========================================
   // 初始化
   // ==========================================
+  initNavDropdown();
   router();
 })();
