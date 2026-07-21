@@ -1545,6 +1545,94 @@ body {
 .legend-dot.stand { width: 10px; height: 10px; border: 2px solid var(--stand-color); border-radius: 50%; background: transparent; }
 .legend-dot.ability-dot { width: 16px; height: 16px; border: 2px solid; border-radius: 50%; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; }
 
+/* ==================== 攻防标签筛选栏 ==================== */
+.side-filter-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.side-filter-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.side-filter-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.side-filter-btn.active {
+  color: var(--text-bright);
+  border-color: var(--accent);
+}
+
+.side-filter-btn.active.attack {
+  background: rgba(255, 70, 85, 0.2);
+  border-color: #ff4655;
+  color: #ff4655;
+}
+
+.side-filter-btn.active.defend {
+  background: rgba(0, 212, 170, 0.2);
+  border-color: #00d4aa;
+  color: #00d4aa;
+}
+
+.side-filter-btn.active.both {
+  background: rgba(123, 104, 238, 0.2);
+  border-color: #7b68ee;
+  color: #7b68ee;
+}
+
+/* ==================== 侧边栏标签徽章 ==================== */
+.info-item-tags {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.info-item-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.info-item-tag.tag-attack {
+  background: rgba(255, 70, 85, 0.15);
+  color: #ff4655;
+  border: 1px solid rgba(255, 70, 85, 0.3);
+}
+
+.info-item-tag.tag-defend {
+  background: rgba(0, 212, 170, 0.15);
+  color: #00d4aa;
+  border: 1px solid rgba(0, 212, 170, 0.3);
+}
+
+.info-item-tag.tag-both {
+  background: rgba(123, 104, 238, 0.15);
+  color: #7b68ee;
+  border: 1px solid rgba(123, 104, 238, 0.3);
+}
+
 /* ==================== 响应式 ==================== */
 @media (max-width: 900px) {
   .map-layout {
@@ -1841,6 +1929,118 @@ body {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed var(--border);
+}
+
+/* 标签编辑区域 */
+.edit-group-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+
+.tag-checkbox-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+
+.tag-checkbox:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.tag-checkbox input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tag-checkbox input:checked + span {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tag-checkbox:has(input:checked) {
+  background: rgba(255, 70, 85, 0.1);
+  border-color: var(--accent);
+}
+
+.tag-custom-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 24px;
+  margin-top: 4px;
+}
+
+.tag-custom-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(123, 104, 238, 0.15);
+  border: 1px solid rgba(123, 104, 238, 0.4);
+  color: #7b68ee;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tag-remove-btn {
+  background: none;
+  border: none;
+  color: #7b68ee;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.tag-remove-btn:hover {
+  opacity: 1;
+  color: #ff4655;
+}
+
+.tag-add-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tag-new-input {
+  flex: 1;
+}
+
+.tag-add-btn {
+  padding: 6px 14px;
+  background: var(--accent);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.tag-add-btn:hover {
+  background: #ff5a6a;
 }
 
 .edit-form-actions {

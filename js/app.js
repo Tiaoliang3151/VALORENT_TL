@@ -17,6 +17,7 @@
   let currentRoleFilter = "all";
   let currentAbilityFilter = "all"; // all | C | Q | E | X | none
   let currentPlantFilter = "all"; // all | open | safe | special | second-floor
+  let currentSideFilter = "all"; // all | 进攻方 | 防守方 | 双通
 
   // 缩放/平移状态
   let zoomLevel = 1;
@@ -208,6 +209,12 @@
             </div>
           </div>
           <div class="legend" id="legend"></div>
+          <div class="side-filter-bar" id="side-filter-bar">
+            <button class="side-filter-btn ${currentSideFilter === "all" ? "active" : ""}" data-side="all">全部</button>
+            <button class="side-filter-btn ${currentSideFilter === "进攻方" ? "active attack" : ""}" data-side="进攻方">进攻方</button>
+            <button class="side-filter-btn ${currentSideFilter === "防守方" ? "active defend" : ""}" data-side="防守方">防守方</button>
+            <button class="side-filter-btn ${currentSideFilter === "双通" ? "active both" : ""}" data-side="双通">双通</button>
+          </div>
         </div>
         <div class="sidebar" id="sidebar"></div>
       </div>
@@ -229,6 +236,15 @@
           currentAgent = null;
         }
         renderMapDetail();
+      });
+    });
+
+    // 绑定攻防标签筛选
+    app.querySelectorAll(".side-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentSideFilter = btn.dataset.side;
+        renderMarkers();
+        renderSidebar();
       });
     });
 
@@ -497,17 +513,27 @@
   // ==========================================
   // 标记渲染
   // ==========================================
+  // 标签过滤：检查item的tags是否包含当前筛选的标签
+  function matchesSideFilter(item) {
+    if (currentSideFilter === "all") return true;
+    const tags = item.tags || [];
+    return tags.includes(currentSideFilter);
+  }
+
   function renderMarkers() {
     const layer = document.getElementById("marker-layer");
     if (!layer) return;
     layer.innerHTML = "";
 
     if (currentTab === "smokes") {
-      renderSmokeMarkers(layer, currentMap.commonSmokes, false);
+      const filtered = currentMap.commonSmokes.filter(matchesSideFilter);
+      renderSmokeMarkers(layer, filtered, false);
     } else if (currentTab === "wallbangs") {
-      renderWallbangMarkers(layer, currentMap.wallbangs);
+      const filtered = currentMap.wallbangs.filter(matchesSideFilter);
+      renderWallbangMarkers(layer, filtered);
     } else if (currentTab === "plants") {
-      renderPlantSpotMarkers(layer, currentMap.plantSpots || []);
+      const filtered = (currentMap.plantSpots || []).filter(matchesSideFilter);
+      renderPlantSpotMarkers(layer, filtered);
     } else if (currentTab === "agents") {
       renderAgentMarkers(layer);
     }
@@ -698,9 +724,12 @@
     }
 
     // 根据技能筛选过滤
-    const filteredLineups = currentAbilityFilter === "all"
+    let filteredLineups = currentAbilityFilter === "all"
       ? lineups
       : lineups.filter((l) => l.ability === currentAbilityFilter);
+
+    // 根据攻防标签过滤
+    filteredLineups = filteredLineups.filter(matchesSideFilter);
 
     if (filteredLineups.length === 0) {
       return;
@@ -735,7 +764,7 @@
   }
 
   function renderSmokeSidebar() {
-    const smokes = currentMap.commonSmokes;
+    const smokes = currentMap.commonSmokes.filter(matchesSideFilter);
     if (smokes.length === 0) {
       return `<div class="empty-state">暂无烟位数据<div class="hint">在 data.js 中添加 commonSmokes</div></div>`;
     }
@@ -749,7 +778,7 @@
   }
 
   function renderWallbangSidebar() {
-    const wbs = currentMap.wallbangs;
+    const wbs = currentMap.wallbangs.filter(matchesSideFilter);
     if (wbs.length === 0) {
       return `<div class="empty-state">暂无穿墙点位<div class="hint">在 data.js 中添加 wallbangs</div></div>`;
     }
@@ -763,7 +792,7 @@
   }
 
   function renderPlantSidebar() {
-    const plantSpots = currentMap.plantSpots || [];
+    const plantSpots = (currentMap.plantSpots || []).filter(matchesSideFilter);
     if (plantSpots.length === 0) {
       return `<div class="empty-state">暂无下包点位<div class="hint">在 data.js 中添加 plantSpots</div></div>`;
     }
@@ -878,6 +907,7 @@
           ${abilityFilterHtml}
           <div class="info-list">
             ${(currentAbilityFilter === "all" ? lineups : currentAbilityFilter === "none" ? [] : lineups.filter((l) => l.ability === currentAbilityFilter))
+              .filter(matchesSideFilter)
               .map((l) => renderInfoItem(l, getTypeLabel(l.type), l.ability)).join("")}
           </div>
         `;
@@ -919,11 +949,20 @@
       badgeStyle = `style="background: ${config.color}; color: white;"`;
     }
 
+    // 渲染标签徽章
+    const tagsHtml = (item.tags || []).map(tag => {
+      const tagClass = tag === "进攻方" ? "tag-attack"
+        : tag === "防守方" ? "tag-defend"
+        : "tag-both";
+      return `<span class="info-item-tag ${tagClass}">${tag}</span>`;
+    }).join("");
+
     return `
       <div class="info-item" data-item-id="${item.id}">
         <div class="info-item-name">
           ${abilityKey ? `<span class="info-item-type ${typeClass}">${abilityKey}</span>` : `<span class="info-item-type ${typeClass}" ${badgeStyle}>${typeLabel}</span>`}
           ${item.name}
+          ${tagsHtml ? `<span class="info-item-tags">${tagsHtml}</span>` : ""}
         </div>
         ${item.desc ? `<div class="info-item-desc">${item.desc}</div>` : ""}
       </div>

@@ -416,6 +416,32 @@
       fieldsHtml += renderTextArea("说明", "desc", item.desc || "");
     }
 
+    // 标签编辑（攻防标签 + 自定义标签）
+    fieldsHtml += `<div class="edit-section-title">标签</div>`;
+    const currentTags = item.tags || [];
+    const presetTags = ["进攻方", "防守方", "双通"];
+    fieldsHtml += `<div class="edit-form-group">`;
+    fieldsHtml += `<label class="edit-group-label">预设标签</label>`;
+    fieldsHtml += `<div class="tag-checkbox-group">`;
+    presetTags.forEach(tag => {
+      const checked = currentTags.includes(tag) ? "checked" : "";
+      fieldsHtml += `<label class="tag-checkbox"><input type="checkbox" data-tag-toggle="${tag}" ${checked}><span>${tag}</span></label>`;
+    });
+    fieldsHtml += `</div>`;
+    // 显示自定义标签
+    const customTags = currentTags.filter(t => !presetTags.includes(t));
+    fieldsHtml += `<label class="edit-group-label">自定义标签</label>`;
+    fieldsHtml += `<div class="tag-custom-list" id="tag-custom-list">`;
+    customTags.forEach(tag => {
+      fieldsHtml += `<span class="tag-custom-item">${tag}<button type="button" data-tag-remove="${tag}" class="tag-remove-btn">&times;</button></span>`;
+    });
+    fieldsHtml += `</div>`;
+    fieldsHtml += `<div class="tag-add-row">`;
+    fieldsHtml += `<input type="text" id="tag-new-input" class="edit-input tag-new-input" placeholder="输入自定义标签名" />`;
+    fieldsHtml += `<button type="button" id="tag-add-btn" class="tag-add-btn">添加</button>`;
+    fieldsHtml += `</div>`;
+    fieldsHtml += `</div>`;
+
     // 图片字段
     fieldsHtml += `<div class="edit-section-title">图片路径（可选）</div>`;
     fieldsHtml += renderInputField("站位图", "standImg", item.standImg || "", "text", "", "", "", "lineups/xxx_stand.jpg");
@@ -449,6 +475,75 @@
         updateField(itemId, field, input.value);
       });
     });
+
+    // 绑定标签切换事件
+    panel.querySelectorAll("[data-tag-toggle]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const tag = cb.dataset.tagToggle;
+        const item = findItem(itemId);
+        if (!item) return;
+        if (!item.tags) item.tags = [];
+        if (cb.checked) {
+          if (!item.tags.includes(tag)) item.tags.push(tag);
+        } else {
+          item.tags = item.tags.filter(t => t !== tag);
+        }
+        saveDraft();
+      });
+    });
+
+    // 绑定标签删除事件
+    panel.querySelectorAll("[data-tag-remove]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tag = btn.dataset.tagRemove;
+        const item = findItem(itemId);
+        if (!item || !item.tags) return;
+        item.tags = item.tags.filter(t => t !== tag);
+        btn.parentElement.remove();
+        saveDraft();
+      });
+    });
+
+    // 绑定添加自定义标签
+    const tagAddBtn = document.getElementById("tag-add-btn");
+    const tagNewInput = document.getElementById("tag-new-input");
+    if (tagAddBtn && tagNewInput) {
+      const addTag = () => {
+        const tag = tagNewInput.value.trim();
+        if (!tag) return;
+        const item = findItem(itemId);
+        if (!item) return;
+        if (!item.tags) item.tags = [];
+        if (!item.tags.includes(tag)) {
+          item.tags.push(tag);
+          // 添加到显示列表
+          const list = document.getElementById("tag-custom-list");
+          if (list) {
+            const el = document.createElement("span");
+            el.className = "tag-custom-item";
+            el.innerHTML = `${tag}<button type="button" data-tag-remove="${tag}" class="tag-remove-btn">&times;</button>`;
+            el.querySelector("button").addEventListener("click", () => {
+              const it = findItem(itemId);
+              if (it && it.tags) {
+                it.tags = it.tags.filter(t => t !== tag);
+                el.remove();
+                saveDraft();
+              }
+            });
+            list.appendChild(el);
+          }
+          tagNewInput.value = "";
+          saveDraft();
+        }
+      };
+      tagAddBtn.addEventListener("click", addTag);
+      tagNewInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addTag();
+        }
+      });
+    }
 
     // 删除按钮
     const delBtn = document.getElementById("edit-delete-btn");
