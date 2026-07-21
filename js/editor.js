@@ -104,6 +104,7 @@
       { id: "add-ball", label: "添加球烟", icon: "●" },
       { id: "add-line", label: "添加线烟", icon: "▬" },
       { id: "add-wallbang", label: "添加穿墙点", icon: "◆" },
+      { id: "add-plant", label: "添加下包点", icon: "⚑" },
       { id: "add-ability", label: "添加技能点位", icon: "★" }
     ];
 
@@ -256,6 +257,9 @@
       return { list: map.commonSmokes, type: "smoke" };
     } else if (tab === "wallbangs") {
       return { list: map.wallbangs, type: "wallbang" };
+    } else if (tab === "plants") {
+      if (!map.plantSpots) map.plantSpots = [];
+      return { list: map.plantSpots, type: "plant" };
     } else if (tab === "agents" && agent) {
       const lineups = app().getLineups();
       if (!lineups[map.id]) lineups[map.id] = {};
@@ -296,6 +300,11 @@
     } else if (tool === "add-wallbang") {
       newItem.name = "新穿墙点";
       newItem.desc = "";
+    } else if (tool === "add-plant") {
+      newItem.name = "新下包点";
+      newItem.plantType = "open";
+      newItem.desc = "";
+      if (ctx.type === "plant") newItem.site = "";
     } else if (tool === "add-ability") {
       newItem.type = "other";
       newItem.name = "新技能点位";
@@ -391,6 +400,18 @@
       fieldsHtml += renderInputField("站位Y(%)", "standY", item.standY || "", "number", "0", "100", "0.1");
       fieldsHtml += renderTextArea("站位说明", "desc", item.desc || "");
       fieldsHtml += renderTextArea("准星瞄准", "crosshair", item.crosshair || "");
+    } else if (ctx.type === "plant") {
+      fieldsHtml += renderSelectField("下包类型", "plantType", item.plantType || "open", [
+        { value: "open", label: "开放包" },
+        { value: "safe", label: "安全包" },
+        { value: "special", label: "特殊包" },
+        { value: "second-floor", label: "二楼包" }
+      ]);
+      fieldsHtml += renderInputField("据点", "site", item.site || "", "text");
+      fieldsHtml += renderTextArea("说明", "desc", item.desc || "");
+      fieldsHtml += renderTextArea("优势", "advantage", item.advantage || "");
+      fieldsHtml += renderTextArea("风险", "risk", item.risk || "");
+      fieldsHtml += renderTextArea("下包后站位", "postPlant", item.postPlant || "");
     } else {
       fieldsHtml += renderTextArea("说明", "desc", item.desc || "");
     }

@@ -16,6 +16,7 @@
   let currentAgent = null;
   let currentRoleFilter = "all";
   let currentAbilityFilter = "all"; // all | C | Q | E | X | none
+  let currentPlantFilter = "all"; // all | open | safe | special | second-floor
 
   // 缩放/平移状态
   let zoomLevel = 1;
@@ -174,6 +175,9 @@
         <button class="tab-btn ${currentTab === "wallbangs" ? "active" : ""}" data-tab="wallbangs">
           穿墙点位 (${map.wallbangs.length})
         </button>
+        <button class="tab-btn ${currentTab === "plants" ? "active" : ""}" data-tab="plants">
+          下包点位 (${(map.plantSpots || []).length})
+        </button>
         <button class="tab-btn ${currentTab === "agents" ? "active" : ""}" data-tab="agents">
           英雄技能
         </button>
@@ -194,8 +198,8 @@
               ${map.image ? "" : generateMapSvg(map, false)}
               <div class="marker-layer" id="marker-layer"></div>
             </div>
-            <div class="map-side-label defenders">防守方 DEFENDERS</div>
             <div class="map-side-label attackers">进攻方 ATTACKERS</div>
+            <div class="map-side-label defenders">防守方 DEFENDERS</div>
             <div class="zoom-controls">
               <button class="zoom-btn" id="zoom-in" title="放大">+</button>
               <div class="zoom-level" id="zoom-level">100%</div>
@@ -502,6 +506,8 @@
       renderSmokeMarkers(layer, currentMap.commonSmokes, false);
     } else if (currentTab === "wallbangs") {
       renderWallbangMarkers(layer, currentMap.wallbangs);
+    } else if (currentTab === "plants") {
+      renderPlantSpotMarkers(layer, currentMap.plantSpots || []);
     } else if (currentTab === "agents") {
       renderAgentMarkers(layer);
     }
@@ -534,7 +540,7 @@
   }
 
   // 固定球烟半径（百分比）
-  const SMOKE_RADIUS = 6;
+  const SMOKE_RADIUS = 3;
 
   function createBallSmokeMarker(smoke, isAgentLineup) {
     const marker = document.createElement("div");
@@ -646,6 +652,40 @@
     });
   }
 
+  // 下包点位标记
+  // 下包类型配置
+  const PLANT_TYPES = {
+    open:        { label: "开放包", color: "#ff4655", icon: "◯" },
+    safe:        { label: "安全包", color: "#00d4aa", icon: "▣" },
+    special:     { label: "特殊包", color: "#ffa500", icon: "★" },
+    "second-floor": { label: "二楼包", color: "#7b68ee", icon: "▲" }
+  };
+
+  function renderPlantSpotMarkers(layer, plantSpots) {
+    plantSpots.forEach((ps) => {
+      const marker = document.createElement("div");
+      marker.className = "marker plant-spot plant-" + (ps.plantType || "open");
+      marker.dataset.itemId = ps.id;
+
+      const config = PLANT_TYPES[ps.plantType] || PLANT_TYPES.open;
+      marker.style.left = ps.x + "%";
+      marker.style.top = ps.y + "%";
+      marker.style.setProperty("--plant-color", config.color);
+
+      marker.innerHTML = `
+        <div class="plant-icon">${config.icon}</div>
+        <div class="plant-label">${ps.name}</div>
+      `;
+
+      marker.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showDetail(ps, "plant");
+      });
+
+      layer.appendChild(marker);
+    });
+  }
+
   // 英雄技能标记
   function renderAgentMarkers(layer) {
     if (!currentAgent || currentAbilityFilter === "none") {
@@ -684,6 +724,8 @@
       sidebar.innerHTML = renderSmokeSidebar();
     } else if (currentTab === "wallbangs") {
       sidebar.innerHTML = renderWallbangSidebar();
+    } else if (currentTab === "plants") {
+      sidebar.innerHTML = renderPlantSidebar();
     } else if (currentTab === "agents") {
       sidebar.innerHTML = renderAgentSidebar();
     }
@@ -716,6 +758,46 @@
       <div class="sidebar-title">穿墙点位 (${wbs.length})</div>
       <div class="info-list">
         ${wbs.map((wb) => renderInfoItem(wb, "穿墙")).join("")}
+      </div>
+    `;
+  }
+
+  function renderPlantSidebar() {
+    const plantSpots = currentMap.plantSpots || [];
+    if (plantSpots.length === 0) {
+      return `<div class="empty-state">暂无下包点位<div class="hint">在 data.js 中添加 plantSpots</div></div>`;
+    }
+
+    // 按类型分组统计
+    const typeCounts = {};
+    plantSpots.forEach((ps) => {
+      const t = ps.plantType || "open";
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+
+    const typeFilterHtml = `
+      <div class="ability-filter">
+        <button class="ability-btn ${currentPlantFilter === "all" ? "active" : ""}" data-plant-filter="all">全部 (${plantSpots.length})</button>
+        ${Object.entries(PLANT_TYPES).map(([key, config]) => {
+          const count = typeCounts[key] || 0;
+          if (count === 0) return "";
+          return `<button class="ability-btn ${currentPlantFilter === key ? "active" : ""}" data-plant-filter="${key}" style="--ability-color: ${config.color}">${config.label} (${count})</button>`;
+        }).join("")}
+      </div>
+    `;
+
+    const filteredSpots = currentPlantFilter === "all"
+      ? plantSpots
+      : plantSpots.filter((ps) => (ps.plantType || "open") === currentPlantFilter);
+
+    return `
+      <div class="sidebar-title">下包点位 (${plantSpots.length})</div>
+      ${typeFilterHtml}
+      <div class="info-list">
+        ${filteredSpots.map((ps) => {
+          const config = PLANT_TYPES[ps.plantType] || PLANT_TYPES.open;
+          return renderInfoItem(ps, config.label);
+        }).join("")}
       </div>
     `;
   }
@@ -827,12 +909,20 @@
     const typeClass = item.type === "ball" ? "type-ball"
       : item.type === "line" ? "type-line"
       : item.type === "other" ? "type-other"
+      : item.plantType ? "type-plant"
       : "type-wallbang";
+
+    // 下包点位用 plantType 的颜色
+    let badgeStyle = "";
+    if (item.plantType) {
+      const config = PLANT_TYPES[item.plantType] || PLANT_TYPES.open;
+      badgeStyle = `style="background: ${config.color}; color: white;"`;
+    }
 
     return `
       <div class="info-item" data-item-id="${item.id}">
         <div class="info-item-name">
-          ${abilityKey ? `<span class="info-item-type ${typeClass}">${abilityKey}</span>` : `<span class="info-item-type ${typeClass}">${typeLabel}</span>`}
+          ${abilityKey ? `<span class="info-item-type ${typeClass}">${abilityKey}</span>` : `<span class="info-item-type ${typeClass}" ${badgeStyle}>${typeLabel}</span>`}
           ${item.name}
         </div>
         ${item.desc ? `<div class="info-item-desc">${item.desc}</div>` : ""}
@@ -868,6 +958,13 @@
       items = [
         { cls: "wallbang", label: "穿墙点位" }
       ];
+    } else if (currentTab === "plants") {
+      items = Object.entries(PLANT_TYPES).map(([key, config]) => ({
+        cls: "plant-" + key,
+        label: config.label,
+        plantColor: config.color,
+        plantIcon: config.icon
+      }));
     } else if (currentTab === "agents") {
       items = [
         { cls: "ball", label: "球烟" },
@@ -890,6 +987,14 @@
         return `
           <div class="legend-item">
             <div class="legend-dot ability-dot" style="border-color: ${color}; color: ${color};">${item.abilityKey}</div>
+            <span>${item.label}</span>
+          </div>
+        `;
+      }
+      if (item.plantColor) {
+        return `
+          <div class="legend-item">
+            <div class="legend-dot plant-dot" style="color: ${item.plantColor}; border-color: ${item.plantColor};">${item.plantIcon}</div>
             <span>${item.label}</span>
           </div>
         `;
@@ -918,7 +1023,11 @@
     // 技能筛选
     app.querySelectorAll(".ability-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        currentAbilityFilter = btn.dataset.ability;
+        if (btn.dataset.ability) {
+          currentAbilityFilter = btn.dataset.ability;
+        } else if (btn.dataset.plantFilter) {
+          currentPlantFilter = btn.dataset.plantFilter;
+        }
         renderMarkers();
         renderSidebar();
       });
@@ -996,6 +1105,8 @@
       return currentMap.commonSmokes.find((s) => s.id === itemId);
     } else if (currentTab === "wallbangs") {
       return currentMap.wallbangs.find((w) => w.id === itemId);
+    } else if (currentTab === "plants") {
+      return (currentMap.plantSpots || []).find((p) => p.id === itemId);
     } else if (currentTab === "agents" && currentAgent) {
       const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
       return lineups.find((l) => l.id === itemId);
@@ -1024,6 +1135,8 @@
       html += renderSmokeDetail(item);
     } else if (type === "wallbang") {
       html += renderWallbangDetail(item);
+    } else if (type === "plant") {
+      html += renderPlantDetail(item);
     } else if (type === "lineup") {
       html += renderLineupDetail(item);
     }
@@ -1057,7 +1170,7 @@
       ${smoke.type === "ball" ? `
         <div class="detail-section">
           <div class="detail-label">半径</div>
-          <div class="detail-value">${smoke.radius}%（地图宽度百分比）</div>
+          <div class="detail-value">${SMOKE_RADIUS}%（固定，地图宽度百分比）</div>
         </div>
       ` : ""}
 
@@ -1090,6 +1203,53 @@
       </div>
 
       ${renderDetailImageSection("效果图", wb.effectImg)}
+    `;
+  }
+
+  function renderPlantDetail(ps) {
+    const config = PLANT_TYPES[ps.plantType] || PLANT_TYPES.open;
+
+    return `
+      <div class="detail-title">${ps.name}</div>
+      <span class="detail-badge" style="background: ${config.color}; color: white;">
+        ${config.label} ${ps.site ? "| " + ps.site + "点" : ""}
+      </span>
+
+      ${ps.desc ? `
+        <div class="detail-section">
+          <div class="detail-label">说明</div>
+          <div class="detail-value">${ps.desc}</div>
+        </div>
+      ` : ""}
+
+      <div class="detail-section">
+        <div class="detail-label">坐标</div>
+        <div class="detail-value">X: ${ps.x}%, Y: ${ps.y}%</div>
+      </div>
+
+      ${ps.advantage ? `
+        <div class="detail-section">
+          <div class="detail-label">优势</div>
+          <div class="detail-value">${ps.advantage}</div>
+        </div>
+      ` : ""}
+
+      ${ps.risk ? `
+        <div class="detail-section">
+          <div class="detail-label">风险</div>
+          <div class="detail-value">${ps.risk}</div>
+        </div>
+      ` : ""}
+
+      ${ps.postPlant ? `
+        <div class="detail-section">
+          <div class="detail-label">下包后站位</div>
+          <div class="detail-value">${ps.postPlant}</div>
+        </div>
+      ` : ""}
+
+      ${renderDetailImageSection("站位图", ps.standImg)}
+      ${renderDetailImageSection("效果图", ps.effectImg)}
     `;
   }
 

@@ -269,6 +269,9 @@ const AGENTS = [
 //      length: 线烟长度（百分比，建议 15-30）
 //      angle: 线烟角度（度，0=水平向右，90=垂直向下）
 //    wallbangs: 穿墙点位
+//    plantSpots: 下包点位
+//      plantType: "open"=开放包, "safe"=安全包, "special"=特殊包, "second-floor"=二楼包
+//      advantage: 优势说明, risk: 风险说明, postPlant: 下包后站位
 // ------------------------------------------
 const MAPS = [
   {
@@ -328,6 +331,21 @@ const MAPS = [
       { id: "haven_wb2", name: "C Long穿点", x: 92, y: 38, desc: "C Long墙壁可穿透，打击C Cubby蹲守的防守方" },
       { id: "haven_wb3", name: "Garage门穿点", x: 50, y: 68, desc: "车库门HP为400，破坏后可穿透打击门后敌人" },
       { id: "haven_wb4", name: "B Window穿点", x: 44, y: 40, desc: "B Window木窗可穿透，打击中路架枪的防守方" }
+    ],
+    plantSpots: [
+      // A 点下包
+      { id: "haven_pl1", plantType: "safe", name: "A安全包", site: "A", x: 16, y: 36, desc: "A点箱子后方安全下包，防守方难以从远处拆包", advantage: "被A Heaven和A Long同时保护，拆包需近身", risk: "防守方从Garden回防时可投掷技能逼退", postPlant: "A Heaven高台架枪，覆盖包点" },
+      { id: "haven_pl2", plantType: "open", name: "A开放包", site: "A", x: 20, y: 40, desc: "A点中央开放区域下包，适合快速下包战术", advantage: "下包速度快，防守方来不及回防", risk: "拆包时可从多个角度覆盖，需强力守包", postPlant: "A Long入口架枪 + Heaven覆盖" },
+      { id: "haven_pl3", plantType: "special", name: "A Garden特殊包", site: "A", x: 26, y: 34, desc: "靠近Garden的隐蔽下包点，出其不意", advantage: "防守方容易忽略此位置", risk: "Garden回防路线近，下包时易被发现", postPlant: "封A Garden烟后架枪守包" },
+      // B 点下包
+      { id: "haven_pl4", plantType: "safe", name: "B安全包", site: "B", x: 48, y: 46, desc: "B点箱体后方安全下包，中路可覆盖", advantage: "被中庭和箱体保护，拆包困难", risk: "防守方可从B窗口高台投掷技能", postPlant: "中庭架枪 + B窗口覆盖" },
+      { id: "haven_pl5", plantType: "open", name: "B开放包", site: "B", x: 52, y: 50, desc: "B点中央开放下包，适合配合烟雾快速占点", advantage: "配合烟雾可快速安全下包", risk: "烟雾散后暴露在多个角度", postPlant: "中庭+B大双方向架枪" },
+      // C 点下包
+      { id: "haven_pl6", plantType: "safe", name: "C安全包", site: "C", x: 84, y: 36, desc: "C点箱体后方安全下包，C Long可覆盖", advantage: "被C Long和箱体保护，拆包极难", risk: "防守方可从C Garage侧绕后", postPlant: "C Long架枪 + 警家覆盖" },
+      { id: "haven_pl7", plantType: "open", name: "C开放包", site: "C", x: 80, y: 40, desc: "C点中央开放下包，适合快速执行", advantage: "下包快，配合C Long烟雾效果好", risk: "从C Heaven和C Cubby可同时覆盖", postPlant: "C Long入口 + 警家方向架枪" },
+      { id: "haven_pl8", plantType: "special", name: "C Cubby特殊包", site: "C", x: 86, y: 44, desc: "C Cubby角落隐蔽下包，出其不意", advantage: "角落位置隐蔽，拆包时难以发现", risk: "近距离防守方可快速清除", postPlant: "封C Cubby烟后远距离架枪" },
+      // 二楼下包
+      { id: "haven_pl9", plantType: "second-floor", name: "A Heaven二楼包", site: "A", x: 14, y: 24, desc: "A Heaven高台二楼下包，需要跳跃到达", advantage: "拆包必须上二楼，时间极紧张", risk: "下包过程中暴露在Heaven视野", postPlant: "从Heaven下方架枪覆盖二楼包" }
     ]
   },
   {
