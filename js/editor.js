@@ -545,14 +545,15 @@
     const mapData = JSON.parse(JSON.stringify(map));
     const lineupData = JSON.parse(JSON.stringify(lineups[map.id] || {}));
 
-    // 移除编辑时添加的临时 id 前缀
+    // 深拷贝清理
     const cleanId = (item) => {
       const copy = { ...item };
       return copy;
     };
 
-    mapData.commonSmokes = mapData.commonSmokes.map(cleanId);
-    mapData.wallbangs = mapData.wallbangs.map(cleanId);
+    mapData.commonSmokes = (mapData.commonSmokes || []).map(cleanId);
+    mapData.wallbangs = (mapData.wallbangs || []).map(cleanId);
+    mapData.plantSpots = (mapData.plantSpots || []).map(cleanId);
     Object.keys(lineupData).forEach(agent => {
       lineupData[agent] = lineupData[agent].map(cleanId);
     });
@@ -560,39 +561,115 @@
     const exportObj = {
       mapId: map.id,
       mapName: map.name,
+      sites: mapData.sites,
       commonSmokes: mapData.commonSmokes,
       wallbangs: mapData.wallbangs,
+      plantSpots: mapData.plantSpots,
       lineups: lineupData
     };
 
     const json = JSON.stringify(exportObj, null, 2);
 
+    // 生成可直接粘贴到 data.js 的代码片段
+    const dataJsSnippet = generateDataJsSnippet(map.id, map.name, exportObj);
+
     // 显示导出面板
     const overlay = document.getElementById("detail-overlay");
     const panel = document.getElementById("detail-panel");
 
+    const smokeCount = mapData.commonSmokes.length;
+    const wallbangCount = mapData.wallbangs.length;
+    const plantCount = mapData.plantSpots.length;
+    const agentCount = Object.keys(lineupData).length;
+    const lineupCount = Object.values(lineupData).reduce((sum, arr) => sum + arr.length, 0);
+
     panel.innerHTML = `
       <button class="detail-close" onclick="document.getElementById('detail-overlay').classList.add('hidden')">&times;</button>
-      <div class="detail-title">导出数据 - ${map.name}</div>
+      <div class="detail-title">导出数据 - ${map.name} (${map.id})</div>
       <div class="edit-export-info">
-        复制下方JSON，粘贴到 <code>js/data.js</code> 中对应地图的位置即可更新。
-        <br>烟位数据在 <code>MAPS</code> 数组中，技能点位在 <code>LINEUPS</code> 对象中。
+        <div class="export-stats">
+          <span class="export-stat">常规烟位: ${smokeCount}</span>
+          <span class="export-stat">穿墙点位: ${wallbangCount}</span>
+          <span class="export-stat">下包点位: ${plantCount}</span>
+          <span class="export-stat">英雄技能: ${agentCount}英雄/${lineupCount}点位</span>
+        </div>
+        <div class="export-tabs">
+          <button class="export-tab-btn active" data-tab="json">JSON数据</button>
+          <button class="export-tab-btn" data-tab="snippet">data.js代码片段</button>
+          <button class="export-tab-btn" data-tab="guide">使用说明</button>
+        </div>
+        <div class="export-tab-content" id="export-tab-json">
+          <textarea class="edit-export-textarea" id="export-textarea" readonly>${json}</textarea>
+        </div>
+        <div class="export-tab-content hidden" id="export-tab-snippet">
+          <div class="export-snippet-info">
+            将下方代码粘贴到 <code>js/data.js</code> 中对应位置：
+            <br>• MAPS 数组中找到 <code>id: "${map.id}"</code> 的地图，替换其 commonSmokes / wallbangs / plantSpots / sites
+            <br>• LINEUPS 对象中找到 <code>${map.id}: {...}</code>，替换整段
+          </div>
+          <textarea class="edit-export-textarea" id="export-snippet-textarea" readonly>${dataJsSnippet}</textarea>
+        </div>
+        <div class="export-tab-content hidden" id="export-tab-guide">
+          <div class="export-guide">
+            <h3>发布流程</h3>
+            <ol>
+              <li>在编辑模式中添加/修改/删除点位</li>
+              <li>点击「导出JSON」获取数据</li>
+              <li>选择「data.js代码片段」标签页</li>
+              <li>复制代码，粘贴到 <code>js/data.js</code> 对应位置</li>
+              <li>将修改后的 <code>data.js</code> 推送到 GitHub</li>
+              <li>GitHub Pages 会自动更新网站</li>
+            </ol>
+            <h3>文件说明</h3>
+            <ul>
+              <li><b>js/data.js</b> - 所有地图数据都在这一个文件中</li>
+              <li>MAPS 数组 - 包含所有地图的烟位、穿墙点、下包点</li>
+              <li>LINEUPS 对象 - 包含所有地图的英雄技能点位</li>
+              <li>每个地图通过 <code>id</code> 字段区分（如 haven、bind、split）</li>
+            </ul>
+            <h3>下载JSON文件</h3>
+            <p>点击下方「下载JSON文件」可保存为 <code>${map.id}_data.json</code>，作为备份。导入时可用「导入JSON」按钮加载。</p>
+          </div>
+        </div>
       </div>
-      <textarea class="edit-export-textarea" id="export-textarea" readonly>${json}</textarea>
       <div class="edit-form-actions">
-        <button class="edit-save-btn" id="copy-json-btn">复制到剪贴板</button>
-        <button class="edit-save-btn" id="download-json-btn">下载JSON文件</button>
+        <button class="edit-save-btn" id="copy-json-btn">复制JSON到剪贴板</button>
+        <button class="edit-save-btn" id="copy-snippet-btn">复制代码片段</button>
+        <button class="edit-save-btn" id="download-json-btn">下载 ${map.id}_data.json</button>
       </div>
     `;
 
     overlay.classList.remove("hidden");
+
+    // 标签页切换
+    panel.querySelectorAll(".export-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        panel.querySelectorAll(".export-tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        panel.querySelectorAll(".export-tab-content").forEach(c => c.classList.add("hidden"));
+        const tabId = "export-tab-" + btn.dataset.tab;
+        const content = document.getElementById(tabId);
+        if (content) content.classList.remove("hidden");
+      });
+    });
 
     document.getElementById("copy-json-btn").addEventListener("click", () => {
       const ta = document.getElementById("export-textarea");
       ta.select();
       try {
         document.execCommand("copy");
-        alert("已复制到剪贴板！");
+        alert("JSON已复制到剪贴板！");
+      } catch (e) {
+        alert("复制失败，请手动选择文本复制。");
+      }
+    });
+
+    document.getElementById("copy-snippet-btn").addEventListener("click", () => {
+      const ta = document.getElementById("export-snippet-textarea");
+      ta.select();
+      try {
+        document.execCommand("copy");
+        alert("代码片段已复制！粘贴到 js/data.js 即可。");
       } catch (e) {
         alert("复制失败，请手动选择文本复制。");
       }
@@ -607,6 +684,27 @@
       a.click();
       URL.revokeObjectURL(url);
     });
+  }
+
+  // 生成可直接粘贴到 data.js 的代码片段
+  function generateDataJsSnippet(mapId, mapName, exportObj) {
+    // 生成 MAPS 数组中该地图的字段替换代码
+    let snippet = `// =========================================\n`;
+    snippet += `// ${mapName} (${mapId}) - 编辑器导出 ${new Date().toLocaleString('zh-CN')}\n`;
+    snippet += `// =========================================\n\n`;
+
+    snippet += `// --- 粘贴到 MAPS 数组中 id: "${mapId}" 的地图对象内 ---\n`;
+    snippet += `// 替换该地图的 sites / commonSmokes / wallbangs / plantSpots 字段\n\n`;
+
+    snippet += `sites: ${JSON.stringify(exportObj.sites, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+    snippet += `commonSmokes: ${JSON.stringify(exportObj.commonSmokes, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+    snippet += `wallbangs: ${JSON.stringify(exportObj.wallbangs, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+    snippet += `plantSpots: ${JSON.stringify(exportObj.plantSpots, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+
+    snippet += `\n// --- 粘贴到 LINEUPS 对象中，替换 "${mapId}: {...}" 整段 ---\n`;
+    snippet += `${mapId}: ${JSON.stringify(exportObj.lineups, null, 2)},\n`;
+
+    return snippet;
   }
 
   function importJSON() {
@@ -625,6 +723,8 @@
 
           if (data.commonSmokes) map.commonSmokes = data.commonSmokes;
           if (data.wallbangs) map.wallbangs = data.wallbangs;
+          if (data.plantSpots) map.plantSpots = data.plantSpots;
+          if (data.sites) map.sites = data.sites;
           if (data.lineups) lineups[map.id] = data.lineups;
 
           saveDraft();

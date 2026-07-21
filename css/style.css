@@ -662,15 +662,16 @@ body {
   backdrop-filter: blur(4px);
 }
 
+/* 攻防方向标签 - 防守方在上，进攻方在下（匹配实际地图方向） */
 .map-side-label.attackers {
-  top: 12px;
+  bottom: 12px;
   background: rgba(255, 70, 85, 0.2);
   color: #ff4655;
   border: 1px solid rgba(255, 70, 85, 0.4);
 }
 
 .map-side-label.defenders {
-  bottom: 12px;
+  top: 12px;
   background: rgba(0, 212, 170, 0.2);
   color: #00d4aa;
   border: 1px solid rgba(0, 212, 170, 0.4);
@@ -1901,6 +1902,118 @@ body {
   font-family: "Consolas", "Monaco", monospace;
   resize: vertical;
   line-height: 1.5;
+}
+
+/* 导出面板 - 统计信息 */
+.export-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.export-stat {
+  background: rgba(255, 70, 85, 0.1);
+  border: 1px solid rgba(255, 70, 85, 0.3);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 导出面板 - 标签页 */
+.export-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.export-tab-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.export-tab-btn:hover {
+  color: var(--text);
+}
+
+.export-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.export-tab-content.hidden {
+  display: none;
+}
+
+.export-snippet-info {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 212, 170, 0.08);
+  border-left: 3px solid var(--sentinel);
+  border-radius: 4px;
+}
+
+.export-snippet-info code {
+  color: var(--sentinel);
+  background: rgba(0, 212, 170, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* 导出面板 - 使用说明 */
+.export-guide {
+  padding: 16px;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.export-guide h3 {
+  font-size: 15px;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+.export-guide h3:first-child {
+  margin-top: 0;
+}
+
+.export-guide ol,
+.export-guide ul {
+  padding-left: 20px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 2;
+}
+
+.export-guide code {
+  color: var(--accent);
+  background: rgba(255, 70, 85, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.export-guide p {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.8;
 }
 
 /* 滚动条样式 */
