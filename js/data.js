@@ -300,52 +300,52 @@ const MAPS = [
     name: "隐世修所",
     enName: "Haven",
     sites: [
-      { id: "A", x: 18, y: 38, label: "A点" },
-      { id: "B", x: 50, y: 48, label: "B点(中)" },
-      { id: "C", x: 82, y: 38, label: "C点" }
+      { id: "A", x: 64.6, y: 15.6, label: "A点" },
+      { id: "B", x: 52.7, y: 49.9, label: "B点(中)" },
+      { id: "C", x: 64.6, y: 84.1, label: "C点" }
     ],
-    image: "maps/haven_overview.png",
-    splash: "maps/haven_splash.jpg",
+    image: "maps/haven_overview.png?v=20260721a",
+    splash: "maps/haven_splash.jpg?v=20260721a",
     description: "不丹延布的三据点地图。A点有Heaven塔楼、C点有超长视线，中路车库门可破坏。三据点布局让中路控制成为胜负关键。",
     commonSmokes: [
       // A 点烟雾
-      { id: "haven_cs1", type: "ball", name: "A Heaven烟", site: "A", x: 15, y: 28, radius: 6, desc: "封住A Heaven塔楼视野，阻止防守方从高处压制A点入口" },
-      { id: "haven_cs2", type: "ball", name: "A大烟", site: "A", x: 10, y: 42, radius: 7, desc: "封住A Long通道，保护进攻方从A长进点" },
-      { id: "haven_cs3", type: "line", name: "A包点隔断烟", site: "A", x: 18, y: 38, length: 18, angle: 90, desc: "在A包点内制造纵向隔断，分割包点空间，便于进攻方占点" },
-      { id: "haven_cs4", type: "ball", name: "A警家烟", site: "A", x: 22, y: 30, radius: 6, desc: "封住A警家回防路线，阻止防守方从CT回防A点" },
-      { id: "haven_cs5", type: "ball", name: "A Garden烟", site: "A", x: 25, y: 32, radius: 5, desc: "封住A Garden，切断防守方从花园回防路线" },
+      { id: "haven_cs1", type: "ball", name: "A Heaven烟", site: "A", x: 76.6, y: 12.4, radius: 6, desc: "封住A Heaven塔楼视野，阻止防守方从高处压制A点入口" },
+      { id: "haven_cs2", type: "ball", name: "A大烟", site: "A", x: 59.9, y: 7.0, radius: 7, desc: "封住A Long通道，保护进攻方从A长进点" },
+      { id: "haven_cs3", type: "line", name: "A包点隔断烟", site: "A", x: 64.6, y: 15.6, length: 18, angle: 180.0, desc: "在A包点内制造纵向隔断，分割包点空间，便于进攻方占点" },
+      { id: "haven_cs4", type: "ball", name: "A警家烟", site: "A", x: 74.2, y: 19.9, radius: 6, desc: "封住A警家回防路线，阻止防守方从CT回防A点" },
+      { id: "haven_cs5", type: "ball", name: "A Garden烟", site: "A", x: 71.8, y: 23.1, radius: 5, desc: "封住A Garden，切断防守方从花园回防路线" },
       // B 点烟雾（中路）
-      { id: "haven_cs6", type: "ball", name: "B大烟", site: "B", x: 50, y: 62, radius: 7, desc: "封住B大通道入口，掩护进攻方进入B点" },
-      { id: "haven_cs7", type: "line", name: "B窗口烟", site: "B", x: 46, y: 42, length: 15, angle: 0, desc: "封住B窗口高台视野，隔离中路到B点的视线" },
-      { id: "haven_cs8", type: "ball", name: "中庭烟", site: "B", x: 50, y: 52, radius: 6, desc: "封住中庭区域，掩护进攻方进入B点" },
-      { id: "haven_cs9", type: "ball", name: "车库烟", site: "B", x: 50, y: 70, radius: 6, desc: "封住车库入口，阻止防守方通过Garage支援" },
+      { id: "haven_cs6", type: "ball", name: "B大烟", site: "B", x: 36.0, y: 49.9, radius: 7, desc: "封住B大通道入口，掩护进攻方进入B点" },
+      { id: "haven_cs7", type: "line", name: "B窗口烟", site: "B", x: 59.9, y: 45.6, length: 15, angle: 90.0, desc: "封住B窗口高台视野，隔离中路到B点的视线" },
+      { id: "haven_cs8", type: "ball", name: "中庭烟", site: "B", x: 47.9, y: 49.9, radius: 6, desc: "封住中庭区域，掩护进攻方进入B点" },
+      { id: "haven_cs9", type: "ball", name: "车库烟", site: "B", x: 26.5, y: 49.9, radius: 6, desc: "封住车库入口，阻止防守方通过Garage支援" },
       // C 点烟雾
-      { id: "haven_cs10", type: "ball", name: "C大烟", site: "C", x: 90, y: 42, radius: 7, desc: "封住C Long超长通道，这是地图最长的视线" },
-      { id: "haven_cs11", type: "line", name: "C包点隔断烟", site: "C", x: 82, y: 38, length: 18, angle: 90, desc: "在C包点内制造纵向隔断，分割包点空间" },
-      { id: "haven_cs12", type: "ball", name: "C警家烟", site: "C", x: 78, y: 30, radius: 6, desc: "封住C警家回防路线，阻止防守方从CT回防C点" },
-      { id: "haven_cs13", type: "ball", name: "C Garage烟", site: "C", x: 72, y: 50, radius: 6, desc: "封住C Garage入口，切断中路到C的连接" },
-      { id: "haven_cs14", type: "ball", name: "C Cubby烟", site: "C", x: 85, y: 45, radius: 5, desc: "封住C Cubby角落，清除常见的防守站位" }
+      { id: "haven_cs10", type: "ball", name: "C大烟", site: "C", x: 59.9, y: 92.7, radius: 7, desc: "封住C Long超长通道，这是地图最长的视线" },
+      { id: "haven_cs11", type: "line", name: "C包点隔断烟", site: "C", x: 64.6, y: 84.1, length: 18, angle: 180.0, desc: "在C包点内制造纵向隔断，分割包点空间" },
+      { id: "haven_cs12", type: "ball", name: "C警家烟", site: "C", x: 74.2, y: 79.8, radius: 6, desc: "封住C警家回防路线，阻止防守方从CT回防C点" },
+      { id: "haven_cs13", type: "ball", name: "C Garage烟", site: "C", x: 50.3, y: 73.4, radius: 6, desc: "封住C Garage入口，切断中路到C的连接" },
+      { id: "haven_cs14", type: "ball", name: "C Cubby烟", site: "C", x: 56.3, y: 87.3, radius: 5, desc: "封住C Cubby角落，清除常见的防守站位" }
     ],
     wallbangs: [
-      { id: "haven_wb1", name: "A Long穿点", x: 8, y: 38, desc: "A Long薄墙可穿透，打击A Garden的防守方" },
-      { id: "haven_wb2", name: "C Long穿点", x: 92, y: 38, desc: "C Long墙壁可穿透，打击C Cubby蹲守的防守方" },
-      { id: "haven_wb3", name: "Garage门穿点", x: 50, y: 68, desc: "车库门HP为400，破坏后可穿透打击门后敌人" },
-      { id: "haven_wb4", name: "B Window穿点", x: 44, y: 40, desc: "B Window木窗可穿透，打击中路架枪的防守方" }
+      { id: "haven_wb1", name: "A Long穿点", x: 64.6, y: 4.9, desc: "A Long薄墙可穿透，打击A Garden的防守方" },
+      { id: "haven_wb2", name: "C Long穿点", x: 64.6, y: 94.8, desc: "C Long墙壁可穿透，打击C Cubby蹲守的防守方" },
+      { id: "haven_wb3", name: "Garage门穿点", x: 28.9, y: 49.9, desc: "车库门HP为400，破坏后可穿透打击门后敌人" },
+      { id: "haven_wb4", name: "B Window穿点", x: 62.2, y: 43.4, desc: "B Window木窗可穿透，打击中路架枪的防守方" }
     ],
     plantSpots: [
       // A 点下包
-      { id: "haven_pl1", plantType: "safe", name: "A安全包", site: "A", x: 16, y: 36, desc: "A点箱子后方安全下包，防守方难以从远处拆包", advantage: "被A Heaven和A Long同时保护，拆包需近身", risk: "防守方从Garden回防时可投掷技能逼退", postPlant: "A Heaven高台架枪，覆盖包点" },
-      { id: "haven_pl2", plantType: "open", name: "A开放包", site: "A", x: 20, y: 40, desc: "A点中央开放区域下包，适合快速下包战术", advantage: "下包速度快，防守方来不及回防", risk: "拆包时可从多个角度覆盖，需强力守包", postPlant: "A Long入口架枪 + Heaven覆盖" },
-      { id: "haven_pl3", plantType: "special", name: "A Garden特殊包", site: "A", x: 26, y: 34, desc: "靠近Garden的隐蔽下包点，出其不意", advantage: "防守方容易忽略此位置", risk: "Garden回防路线近，下包时易被发现", postPlant: "封A Garden烟后架枪守包" },
+      { id: "haven_pl1", plantType: "safe", name: "A安全包", site: "A", x: 67.0, y: 13.5, desc: "A点箱子后方安全下包，防守方难以从远处拆包", advantage: "被A Heaven和A Long同时保护，拆包需近身", risk: "防守方从Garden回防时可投掷技能逼退", postPlant: "A Heaven高台架枪，覆盖包点" },
+      { id: "haven_pl2", plantType: "open", name: "A开放包", site: "A", x: 62.2, y: 17.8, desc: "A点中央开放区域下包，适合快速下包战术", advantage: "下包速度快，防守方来不及回防", risk: "拆包时可从多个角度覆盖，需强力守包", postPlant: "A Long入口架枪 + Heaven覆盖" },
+      { id: "haven_pl3", plantType: "special", name: "A Garden特殊包", site: "A", x: 69.4, y: 24.2, desc: "靠近Garden的隐蔽下包点，出其不意", advantage: "防守方容易忽略此位置", risk: "Garden回防路线近，下包时易被发现", postPlant: "封A Garden烟后架枪守包" },
       // B 点下包
-      { id: "haven_pl4", plantType: "safe", name: "B安全包", site: "B", x: 48, y: 46, desc: "B点箱体后方安全下包，中路可覆盖", advantage: "被中庭和箱体保护，拆包困难", risk: "防守方可从B窗口高台投掷技能", postPlant: "中庭架枪 + B窗口覆盖" },
-      { id: "haven_pl5", plantType: "open", name: "B开放包", site: "B", x: 52, y: 50, desc: "B点中央开放下包，适合配合烟雾快速占点", advantage: "配合烟雾可快速安全下包", risk: "烟雾散后暴露在多个角度", postPlant: "中庭+B大双方向架枪" },
+      { id: "haven_pl4", plantType: "safe", name: "B安全包", site: "B", x: 55.1, y: 47.7, desc: "B点箱体后方安全下包，中路可覆盖", advantage: "被中庭和箱体保护，拆包困难", risk: "防守方可从B窗口高台投掷技能", postPlant: "中庭架枪 + B窗口覆盖" },
+      { id: "haven_pl5", plantType: "open", name: "B开放包", site: "B", x: 50.3, y: 52.0, desc: "B点中央开放下包，适合配合烟雾快速占点", advantage: "配合烟雾可快速安全下包", risk: "烟雾散后暴露在多个角度", postPlant: "中庭+B大双方向架枪" },
       // C 点下包
-      { id: "haven_pl6", plantType: "safe", name: "C安全包", site: "C", x: 84, y: 36, desc: "C点箱体后方安全下包，C Long可覆盖", advantage: "被C Long和箱体保护，拆包极难", risk: "防守方可从C Garage侧绕后", postPlant: "C Long架枪 + 警家覆盖" },
-      { id: "haven_pl7", plantType: "open", name: "C开放包", site: "C", x: 80, y: 40, desc: "C点中央开放下包，适合快速执行", advantage: "下包快，配合C Long烟雾效果好", risk: "从C Heaven和C Cubby可同时覆盖", postPlant: "C Long入口 + 警家方向架枪" },
-      { id: "haven_pl8", plantType: "special", name: "C Cubby特殊包", site: "C", x: 86, y: 44, desc: "C Cubby角落隐蔽下包，出其不意", advantage: "角落位置隐蔽，拆包时难以发现", risk: "近距离防守方可快速清除", postPlant: "封C Cubby烟后远距离架枪" },
+      { id: "haven_pl6", plantType: "safe", name: "C安全包", site: "C", x: 67.0, y: 86.3, desc: "C点箱体后方安全下包，C Long可覆盖", advantage: "被C Long和箱体保护，拆包极难", risk: "防守方可从C Garage侧绕后", postPlant: "C Long架枪 + 警家覆盖" },
+      { id: "haven_pl7", plantType: "open", name: "C开放包", site: "C", x: 62.2, y: 82.0, desc: "C点中央开放下包，适合快速执行", advantage: "下包快，配合C Long烟雾效果好", risk: "从C Heaven和C Cubby可同时覆盖", postPlant: "C Long入口 + 警家方向架枪" },
+      { id: "haven_pl8", plantType: "special", name: "C Cubby特殊包", site: "C", x: 57.5, y: 88.4, desc: "C Cubby角落隐蔽下包，出其不意", advantage: "角落位置隐蔽，拆包时难以发现", risk: "近距离防守方可快速清除", postPlant: "封C Cubby烟后远距离架枪" },
       // 二楼下包
-      { id: "haven_pl9", plantType: "second-floor", name: "A Heaven二楼包", site: "A", x: 14, y: 24, desc: "A Heaven高台二楼下包，需要跳跃到达", advantage: "拆包必须上二楼，时间极紧张", risk: "下包过程中暴露在Heaven视野", postPlant: "从Heaven下方架枪覆盖二楼包" }
+      { id: "haven_pl9", plantType: "second-floor", name: "A Heaven二楼包", site: "A", x: 81.3, y: 11.3, desc: "A Heaven高台二楼下包，需要跳跃到达", advantage: "拆包必须上二楼，时间极紧张", risk: "下包过程中暴露在Heaven视野", postPlant: "从Heaven下方架枪覆盖二楼包" }
     ]
   },
   {
@@ -592,40 +592,40 @@ const LINEUPS = {
     brimstone: [
       {
         ability: "E", name: "A Heaven烟", type: "ball",
-        x: 15, y: 28, radius: 6,
-        standX: 8, standY: 45,
+        x: 76.6, y: 12.4, radius: 6,
+        standX: 56.3, standY: 4.9,
         desc: "站在A Long入口拐角，打开战术地图",
         crosshair: "在战术地图上将烟雾标记放在A Heaven塔楼位置",
         video: ""
       },
       {
         ability: "E", name: "A大烟", type: "ball",
-        x: 10, y: 42, radius: 7,
-        standX: 8, standY: 42,
+        x: 59.9, y: 7.0, radius: 7,
+        standX: 59.9, standY: 4.9,
         desc: "站在A Long入口",
         crosshair: "在战术地图上将烟雾标记放在A Long通道中段",
         video: ""
       },
       {
         ability: "E", name: "C大烟", type: "ball",
-        x: 90, y: 42, radius: 7,
-        standX: 92, standY: 42,
+        x: 59.9, y: 92.7, radius: 7,
+        standX: 59.9, standY: 94.8,
         desc: "站在C Long入口",
         crosshair: "在战术地图上将烟雾标记放在C Long通道中段",
         video: ""
       },
       {
         ability: "E", name: "C Garage烟", type: "ball",
-        x: 72, y: 50, radius: 6,
-        standX: 92, standY: 42,
+        x: 50.3, y: 73.4, radius: 6,
+        standX: 59.9, standY: 94.8,
         desc: "站在C Long入口",
         crosshair: "在战术地图上将烟雾标记放在Garage入口",
         video: ""
       },
       {
         ability: "Q", name: "A点燃烧弹(守包)", type: "other",
-        x: 18, y: 40, radius: 5,
-        standX: 22, standY: 32,
+        x: 62.2, y: 15.6, radius: 5,
+        standX: 71.8, standY: 19.9,
         desc: "站在A Garden的独轮车上方角落",
         crosshair: "转身寻找从左数第二个吊灯，瞄准其中间位置释放",
         video: ""
@@ -634,24 +634,24 @@ const LINEUPS = {
     viper: [
       {
         ability: "E", name: "中路垂直线烟", type: "line",
-        x: 50, y: 35, length: 30, angle: 90,
-        standX: 50, standY: 25,
+        x: 68.2, y: 49.9, length: 30, angle: 180.0,
+        standX: 80.1, standY: 49.9,
         desc: "站在中路高处Window位置",
         crosshair: "垂直向下瞄准，覆盖中路到B点通道",
         video: ""
       },
       {
         ability: "C", name: "Garage毒雾", type: "ball",
-        x: 50, y: 68, radius: 5,
-        standX: 48, standY: 58,
+        x: 28.9, y: 49.9, radius: 5,
+        standX: 40.8, standY: 47.7,
         desc: "站在Garage入口旁的箱子后",
         crosshair: "瞄准Garage门口地面释放",
         video: ""
       },
       {
         ability: "E", name: "C Long线烟", type: "line",
-        x: 90, y: 42, length: 25, angle: 0,
-        standX: 85, standY: 50,
+        x: 59.9, y: 92.7, length: 25, angle: 90.0,
+        standX: 50.3, standY: 87.3,
         desc: "站在C点靠近C Long的位置",
         crosshair: "水平向右瞄准，覆盖C Long超长通道",
         video: ""
@@ -660,24 +660,24 @@ const LINEUPS = {
     omen: [
       {
         ability: "E", name: "A Heaven深烟", type: "ball",
-        x: 15, y: 28, radius: 6,
-        standX: 22, standY: 35,
+        x: 76.6, y: 12.4, radius: 6,
+        standX: 68.2, standY: 19.9,
         desc: "站在A Garden第一层台子角落",
         crosshair: "瞄准A Heaven塔楼上方天空，烟雾会自动飞到目标位置",
         video: ""
       },
       {
         ability: "E", name: "C大深烟", type: "ball",
-        x: 90, y: 42, radius: 6,
-        standX: 80, standY: 38,
+        x: 59.9, y: 92.7, radius: 6,
+        standX: 64.6, standY: 82.0,
         desc: "站在C点靠近C Long的拐角",
         crosshair: "瞄准C Long方向天空右侧",
         video: ""
       },
       {
         ability: "E", name: "B窗口烟", type: "ball",
-        x: 46, y: 42, radius: 6,
-        standX: 52, standY: 50,
+        x: 59.9, y: 45.6, radius: 6,
+        standX: 50.3, standY: 52.0,
         desc: "站在中路靠B点一侧",
         crosshair: "瞄准B Window高台方向天空",
         video: ""
@@ -689,8 +689,8 @@ const LINEUPS = {
       {
         id: "haven_sova_1",
         ability: "E", name: "A点全图侦察(从A Long)", type: "other",
-        x: 18, y: 38, radius: 5,
-        standX: 8, standY: 45,
+        x: 64.6, y: 15.6, radius: 5,
+        standX: 56.3, standY: 4.9,
         desc: "站在A Long角落，靠墙不动。将蓄力条第三格对准左侧菱形底部",
         crosshair: "无反弹，2格蓄力。箭会落在A点屋顶，覆盖整个A点",
         standImg: "lineups/haven_sova_a_recon_stand.jpg",
@@ -701,8 +701,8 @@ const LINEUPS = {
       {
         id: "haven_sova_2",
         ability: "E", name: "A Heaven侦察(从A Garden)", type: "other",
-        x: 15, y: 28, radius: 4,
-        standX: 25, standY: 32,
+        x: 76.6, y: 12.4, radius: 4,
+        standX: 71.8, standY: 23.1,
         desc: "站在A Garden第一层台子角落。将HUD线尖端对准如图所示位置，留一像素间隙",
         crosshair: "无反弹，1格蓄力。箭落在A Heaven高台，侦察塔楼防守方",
         standImg: "lineups/haven_sova_a_heaven_stand.jpg",
@@ -713,8 +713,8 @@ const LINEUPS = {
       {
         id: "haven_sova_3",
         ability: "E", name: "A点低位屋顶侦察(从A Garden)", type: "other",
-        x: 18, y: 40, radius: 4,
-        standX: 25, standY: 32,
+        x: 62.2, y: 15.6, radius: 4,
+        standX: 71.8, standY: 23.1,
         desc: "站在A Garden第一层台子角落。箭会从箱子反弹后粘在屋顶下方",
         crosshair: "无反弹，1格蓄力。覆盖A点最大范围，是A点最佳侦察箭",
         video: ""
@@ -722,8 +722,8 @@ const LINEUPS = {
       {
         id: "haven_sova_4",
         ability: "E", name: "B点后方侦察(从A Garden)", type: "other",
-        x: 50, y: 52, radius: 4,
-        standX: 25, standY: 32,
+        x: 47.9, y: 49.9, radius: 4,
+        standX: 71.8, standY: 23.1,
         desc: "站在A Garden第一层台子角落。将HUD线尖端对准绿色方块边缘一半位置",
         crosshair: "无反弹，2格蓄力。箭飞越中路落在B点后方",
         video: ""
@@ -731,8 +731,8 @@ const LINEUPS = {
       {
         id: "haven_sova_5",
         ability: "E", name: "C点侦察(从C Link)", type: "other",
-        x: 82, y: 38, radius: 4,
-        standX: 75, standY: 35,
+        x: 64.6, y: 84.1, radius: 4,
+        standX: 68.2, standY: 76.6,
         desc: "站在C Link拐角。蓄力条右上角对准桶的阴影",
         crosshair: "无反弹，2格蓄力。覆盖C点大部分区域",
         video: ""
@@ -740,8 +740,8 @@ const LINEUPS = {
       {
         id: "haven_sova_6",
         ability: "E", name: "C大侦察(从C点)", type: "other",
-        x: 90, y: 42, radius: 4,
-        standX: 80, standY: 42,
+        x: 59.9, y: 92.7, radius: 4,
+        standX: 59.9, standY: 82.0,
         desc: "站在C点后方靠近C Link位置，无反弹2格蓄力。箭落在C Long树上方的树枝",
         crosshair: "瞄准C Long方向树梢位置",
         video: ""
@@ -749,8 +749,8 @@ const LINEUPS = {
       {
         id: "haven_sova_7",
         ability: "E", name: "A Garden防守侦察(从A点)", type: "other",
-        x: 25, y: 32, radius: 4,
-        standX: 18, standY: 40,
+        x: 71.8, y: 23.1, radius: 4,
+        standX: 62.2, standY: 15.6,
         desc: "站在A点后方箱子上（黑色左角）。将箭尖对准屋顶角落",
         crosshair: "防守方使用。无反弹，1格蓄力",
         video: ""
@@ -758,8 +758,8 @@ const LINEUPS = {
       {
         id: "haven_sova_8",
         ability: "E", name: "进攻方出生点侦察(从A点)", type: "other",
-        x: 5, y: 45, radius: 4,
-        standX: 18, standY: 42,
+        x: 56.3, y: 1.7, radius: 4,
+        standX: 59.9, standY: 15.6,
         desc: "站在A点后方箱子角落。将震击箭图标尖端对准屋顶顶点",
         crosshair: "防守方使用。可侦察到A Sewer的敌人",
         video: ""
@@ -768,8 +768,8 @@ const LINEUPS = {
       {
         id: "haven_sova_9",
         ability: "Q", name: "A Heaven双发震击(从A Long)", type: "other",
-        x: 15, y: 28, radius: 4,
-        standX: 8, standY: 42,
+        x: 76.6, y: 12.4, radius: 4,
+        standX: 59.9, standY: 4.9,
         desc: "站在A Long沙袋角落（地面层，不是上方）。箭1:HUD尖端在花瓣上方一像素；箭2:左菱形对准灯泡",
         crosshair: "2格蓄力。两支箭同步落下，压制A Heaven",
         video: ""
@@ -777,8 +777,8 @@ const LINEUPS = {
       {
         id: "haven_sova_10",
         ability: "Q", name: "A点默认下包震击(从A Long)", type: "other",
-        x: 18, y: 40, radius: 4,
-        standX: 8, standY: 42,
+        x: 62.2, y: 15.6, radius: 4,
+        standX: 59.9, standY: 4.9,
         desc: "站在A Long沙袋角落。箭1:从对角线连线到间隙；箭2:瞄准灯泡右下",
         crosshair: "守包使用。打击A点默认下包位置的敌人",
         video: ""
@@ -786,8 +786,8 @@ const LINEUPS = {
       {
         id: "haven_sova_11",
         ability: "Q", name: "B点默认下包震击(从C Garage)", type: "other",
-        x: 50, y: 52, radius: 4,
-        standX: 72, standY: 50,
+        x: 47.9, y: 49.9, radius: 4,
+        standX: 50.3, standY: 73.4,
         desc: "站在C Garage门角落。准星对准缆绳上的环，上移至碰到木块边缘",
         crosshair: "保持在木边缘下方，否则箭会打到门顶。1格蓄力",
         video: ""
@@ -795,8 +795,8 @@ const LINEUPS = {
       {
         id: "haven_sova_12",
         ability: "Q", name: "A点震击(从A Link)", type: "other",
-        x: 18, y: 40, radius: 4,
-        standX: 28, standY: 45,
+        x: 62.2, y: 15.6, radius: 4,
+        standX: 56.3, standY: 26.3,
         desc: "站在A Link拐角的箱子旁。准星对准木梁，弓的右侧对准右边木梁",
         crosshair: "防守方使用。打击A点进攻方",
         video: ""
@@ -804,8 +804,8 @@ const LINEUPS = {
       {
         id: "haven_sova_13",
         ability: "Q", name: "C点震击(从C Link)", type: "other",
-        x: 82, y: 38, radius: 4,
-        standX: 72, standY: 45,
+        x: 64.6, y: 84.1, radius: 4,
+        standX: 56.3, standY: 73.4,
         desc: "站在C Link靶子角落，贴墙直到停止。将猎枭小指关节对准墙壁装饰曲线",
         crosshair: "防守方使用。打击C点的进攻方",
         video: ""
@@ -814,8 +814,8 @@ const LINEUPS = {
       {
         id: "haven_sova_14",
         ability: "E", name: "假C点箭(从A Garden)", type: "other",
-        x: 82, y: 38, radius: 4,
-        standX: 25, standY: 32,
+        x: 64.6, y: 84.1, radius: 4,
+        standX: 71.8, standY: 23.1,
         desc: "站在A Garden第一层台子角落。将无人机图标尖端嵌在柱状结构的顶部间隙",
         crosshair: "假箭。让C点防守方误以为进攻方在打C，实际在打A",
         video: ""
@@ -824,8 +824,8 @@ const LINEUPS = {
       {
         id: "haven_sova_15",
         ability: "X", name: "中路三连大招", type: "other",
-        x: 50, y: 48, radius: 5,
-        standX: 50, standY: 25,
+        x: 52.7, y: 49.9, radius: 5,
+        standX: 80.1, standY: 49.9,
         desc: "站在中路高处。大招可穿透墙壁，对中路到B点一线的敌人造成伤害",
         crosshair: "瞄准中路方向，三发分别覆盖前中后三段",
         video: ""
