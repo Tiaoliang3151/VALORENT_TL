@@ -307,6 +307,25 @@ const MAPS = [
     image: "maps/haven_overview.png?v=20260721a",
     splash: "maps/haven_splash.jpg?v=20260721a",
     description: "不丹延布的三据点地图。A点有Heaven塔楼、C点有超长视线，中路车库门可破坏。三据点布局让中路控制成为胜负关键。",
+    locations: [
+      { name: "A Long", x: 56.3, y: 4.9, type: "route" },
+      { name: "A Heaven", x: 81.3, y: 11.3, type: "route" },
+      { name: "A Garden", x: 69.4, y: 24.2, type: "route" },
+      { name: "A Link", x: 55.1, y: 30.0, type: "route" },
+      { name: "A Lobby", x: 62.2, y: 17.8, type: "route" },
+      { name: "B Main", x: 50.3, y: 45.0, type: "route" },
+      { name: "B Window", x: 52.7, y: 42.0, type: "route" },
+      { name: "中庭", x: 52.7, y: 49.9, type: "area" },
+      { name: "车库", x: 57.5, y: 55.0, type: "area" },
+      { name: "C Long", x: 64.6, y: 94.8, type: "route" },
+      { name: "C Link", x: 56.3, y: 73.4, type: "route" },
+      { name: "C Garage", x: 50.3, y: 60.0, type: "area" },
+      { name: "C Cubby", x: 74.2, y: 79.8, type: "route" },
+      { name: "C Lobby", x: 62.2, y: 82.0, type: "route" },
+      { name: "A点", x: 64.6, y: 15.6, type: "site" },
+      { name: "B点", x: 52.7, y: 49.9, type: "site" },
+      { name: "C点", x: 64.6, y: 84.1, type: "site" }
+    ],
     commonSmokes: [
       // A 点烟雾
       { id: "haven_cs1", type: "ball", name: "A Heaven烟", site: "A", x: 76.6, y: 12.4, radius: 6, desc: "封住A Heaven塔楼视野，阻止防守方从高处压制A点入口", tags: ["进攻方"] },

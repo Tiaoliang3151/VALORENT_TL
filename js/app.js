@@ -19,17 +19,8 @@
   let currentPlantFilter = "all"; // all | open | safe | special | second-floor
   let currentSideFilter = "all"; // all | 进攻方 | 防守方 | 双通
 
-  // 缩放/平移状态
-  let zoomLevel = 1;
-  let panX = 0;
-  let panY = 0;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let dragStartPanX = 0;
-  let dragStartPanY = 0;
-  const MIN_ZOOM = 1;
-  const MAX_ZOOM = 5;
+  // 地点名称显示状态
+  let showLocationNames = true;
 
   // 技能键位颜色
   const ABILITY_COLORS = {
@@ -146,11 +137,6 @@
   function renderMapDetail() {
     const map = currentMap;
 
-    // 重置缩放状态
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-
     const html = `
       <div class="breadcrumb">
         <a href="#/">地图选择</a>
@@ -199,14 +185,12 @@
               ${map.image ? "" : generateMapSvg(map, false)}
               <div class="marker-layer" id="marker-layer"></div>
             </div>
+            <div class="map-location-toggle" id="map-location-toggle">
+              <input type="checkbox" id="location-names-checkbox" ${showLocationNames ? "checked" : ""}>
+              <label for="location-names-checkbox">地名</label>
+            </div>
             <div class="map-side-label attackers">进攻方 ATTACKERS</div>
             <div class="map-side-label defenders">防守方 DEFENDERS</div>
-            <div class="zoom-controls">
-              <button class="zoom-btn" id="zoom-in" title="放大">+</button>
-              <div class="zoom-level" id="zoom-level">100%</div>
-              <button class="zoom-btn" id="zoom-out" title="缩小">−</button>
-              <button class="zoom-btn" id="zoom-reset" title="重置" style="font-size:14px;">⟲</button>
-            </div>
           </div>
           <div class="legend" id="legend"></div>
           <div class="side-filter-bar" id="side-filter-bar">
@@ -272,194 +256,62 @@
       });
     }
 
+    // 绑定地点名称开关
+    const locationCheckbox = document.getElementById("location-names-checkbox");
+    if (locationCheckbox) {
+      locationCheckbox.addEventListener("change", () => {
+        showLocationNames = locationCheckbox.checked;
+        renderLocationNames();
+      });
+    }
+
     // 如果编辑模式已激活，重新绑定画布事件
     if (window.MapEditor && window.MapEditor.isActive()) {
       // 编辑器会在enter后自己绑定
     }
 
-    // 初始化缩放/平移
-    initZoomPan();
-
-    // 渲染标记和侧边栏
+    // 渲染标记、地点名称、侧边栏
     renderMarkers();
+    renderLocationNames();
     renderSidebar();
     renderLegend();
+
+    // 编辑器激活时，DOM 重建后需恢复工具栏和画布事件
+    if (window.MapEditor && window.MapEditor.isActive()) {
+      setTimeout(() => {
+        window.MapEditor._rebindEditorUI && window.MapEditor._rebindEditorUI();
+      }, 0);
+    }
   }
 
   // ==========================================
-  // 缩放/平移功能
+  // 地点名称渲染
   // ==========================================
-  function initZoomPan() {
-    const canvas = document.getElementById("map-canvas");
-    if (!canvas) return;
+  function renderLocationNames() {
+    const layer = document.getElementById("marker-layer");
+    if (!layer || !currentMap) return;
 
-    // 按钮缩放
-    const zoomInBtn = document.getElementById("zoom-in");
-    const zoomOutBtn = document.getElementById("zoom-out");
-    const zoomResetBtn = document.getElementById("zoom-reset");
+    // 移除已有的地点标签
+    layer.parentElement.querySelectorAll(".map-location-label").forEach(el => el.remove());
 
-    if (zoomInBtn) {
-      zoomInBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setZoom(zoomLevel + 0.5, true);
-      });
-    }
-    if (zoomOutBtn) {
-      zoomOutBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setZoom(zoomLevel - 0.5, true);
-      });
-    }
-    if (zoomResetBtn) {
-      zoomResetBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        resetZoom();
-      });
-    }
+    const locations = currentMap.locations;
+    if (!locations || locations.length === 0) return;
 
-    // 滚轮缩放
-    canvas.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.3 : 0.3;
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      setZoom(zoomLevel + delta, false, mouseX, mouseY);
-    }, { passive: false });
+    locations.forEach(loc => {
+      const label = document.createElement("div");
+      label.className = "map-location-label" + (loc.type === "site" ? " type-site" : "");
 
-    // 拖拽平移
-    canvas.addEventListener("mousedown", (e) => {
-      // 不拦截标记点击
-      if (e.target.closest(".marker") || e.target.closest(".zoom-btn")) return;
-      isDragging = true;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      dragStartPanX = panX;
-      dragStartPanY = panY;
-      canvas.classList.add("dragging");
-      e.preventDefault();
-    });
-
-    document.addEventListener("mousemove", (e) => {
-      if (!isDragging) return;
-      const dx = (e.clientX - dragStartX) / zoomLevel;
-      const dy = (e.clientY - dragStartY) / zoomLevel;
-      panX = dragStartPanX + dx;
-      panY = dragStartPanY + dy;
-      updateZoomTransform();
-    });
-
-    document.addEventListener("mouseup", () => {
-      if (isDragging) {
-        isDragging = false;
-        canvas.classList.remove("dragging");
+      // 非 site 类型在 toggle 关闭时隐藏
+      if (loc.type !== "site" && !showLocationNames) {
+        label.classList.add("hidden");
       }
+
+      label.textContent = loc.name;
+      label.style.left = loc.x + "%";
+      label.style.top = loc.y + "%";
+
+      layer.parentElement.appendChild(label);
     });
-
-    // 触摸缩放（双指）
-    let touchStartDist = 0;
-    let touchStartZoom = 1;
-    let touchStartPanX = 0;
-    let touchStartPanY = 0;
-    let touchStartCenterX = 0;
-    let touchStartCenterY = 0;
-
-    canvas.addEventListener("touchstart", (e) => {
-      if (e.target.closest(".marker") || e.target.closest(".zoom-btn")) return;
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        touchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        touchStartZoom = zoomLevel;
-        const rect = canvas.getBoundingClientRect();
-        touchStartCenterX = ((t1.clientX + t2.clientX) / 2) - rect.left;
-        touchStartCenterY = ((t1.clientY + t2.clientY) / 2) - rect.top;
-        touchStartPanX = panX;
-        touchStartPanY = panY;
-      } else if (e.touches.length === 1) {
-        const t = e.touches[0];
-        isDragging = true;
-        dragStartX = t.clientX;
-        dragStartY = t.clientY;
-        dragStartPanX = panX;
-        dragStartPanY = panY;
-      }
-    }, { passive: false });
-
-    canvas.addEventListener("touchmove", (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        if (touchStartDist > 0) {
-          const scale = dist / touchStartDist;
-          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, touchStartZoom * scale));
-          zoomLevel = newZoom;
-          updateZoomTransform();
-        }
-      } else if (e.touches.length === 1 && isDragging) {
-        e.preventDefault();
-        const t = e.touches[0];
-        const dx = (t.clientX - dragStartX) / zoomLevel;
-        const dy = (t.clientY - dragStartY) / zoomLevel;
-        panX = dragStartPanX + dx;
-        panY = dragStartPanY + dy;
-        updateZoomTransform();
-      }
-    }, { passive: false });
-
-    canvas.addEventListener("touchend", () => {
-      isDragging = false;
-      touchStartDist = 0;
-    });
-  }
-
-  function setZoom(newZoom, animate, centerX, centerY) {
-    const oldZoom = zoomLevel;
-    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-
-    if (centerX !== undefined && centerY !== undefined) {
-      // 以鼠标位置为中心缩放
-      const canvas = document.getElementById("map-canvas");
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect();
-        const cx = centerX || rect.width / 2;
-        const cy = centerY || rect.height / 2;
-        // 调整pan使得鼠标位置保持不变
-        const zoomRatio = zoomLevel / oldZoom;
-        panX = cx / oldZoom - (cx / zoomLevel) + panX * (1 / zoomRatio) * zoomRatio;
-        panY = cy / oldZoom - (cy / zoomLevel) + panY * (1 / zoomRatio) * zoomRatio;
-      }
-    }
-
-    updateZoomTransform(animate);
-  }
-
-  function resetZoom() {
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-    updateZoomTransform(true);
-  }
-
-  function updateZoomTransform(animate) {
-    const container = document.getElementById("map-zoom-container");
-    const levelDisplay = document.getElementById("zoom-level");
-    if (!container) return;
-
-    if (animate) {
-      container.style.transition = "transform 0.3s ease";
-    } else {
-      container.style.transition = "none";
-    }
-
-    container.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
-
-    if (levelDisplay) {
-      levelDisplay.textContent = Math.round(zoomLevel * 100) + "%";
-    }
   }
 
   // ==========================================
@@ -1485,9 +1337,17 @@
     ABILITY_COLORS: ABILITY_COLORS
   };
 
-  // 编辑器数据更新后重新渲染
+  // 编辑器数据更新后重新渲染（仅在编辑器未激活时完整重渲染）
   window.addEventListener("editor-data-updated", () => {
-    renderMapDetail();
+    if (window.MapEditor && window.MapEditor.isActive()) {
+      // 编辑器激活时，完整重渲染后需恢复工具栏和画布事件
+      renderMapDetail();
+      setTimeout(() => {
+        window.MapEditor._rebindEditorUI && window.MapEditor._rebindEditorUI();
+      }, 100);
+    } else {
+      renderMapDetail();
+    }
   });
 
   router();

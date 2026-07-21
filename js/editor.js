@@ -12,6 +12,8 @@
   let editSelectedId = null;
   let dragState = null;
   let isDragging = false;
+  let lineDrawState = null; // 线烟绘制状态 { startX, startY, previewEl, canvasRect }
+  let docEventsBound = false; // document 级别事件是否已绑定
 
   // 获取应用接口
   function app() { return window.__APP__; }
@@ -35,6 +37,7 @@
     editTool = "select";
     showEditBanner();
     app().rerender();
+    // rerender 会重建 DOM，toolbar 和画布事件需要在 DOM 重建后重新绑定
     setTimeout(() => {
       addEditToolbar();
       bindCanvasEvents();
@@ -46,6 +49,9 @@
     editMode = false;
     editTool = "select";
     editSelectedId = null;
+    lineDrawState = null;
+    dragState = null;
+    isDragging = false;
     removeEditBanner();
     app().rerender();
   }
@@ -147,19 +153,24 @@
     const canvas = document.getElementById("map-canvas");
     if (!canvas) return;
 
-    // 点击地图添加点位
+    // canvas 事件每次都要重新绑定（DOM 重建后会丢失）
     canvas.addEventListener("click", handleCanvasClick, true);
-    // 拖拽移动
-    canvas.addEventListener("mousedown", handleMouseDown, true);
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mousedown", handleCanvasMouseDown, true);
+
+    // document 事件只需要绑定一次（不会被 DOM 重建移除）
+    if (!docEventsBound) {
+      docEventsBound = true;
+      document.addEventListener("mousemove", handleEditorMouseMove);
+      document.addEventListener("mouseup", handleEditorMouseUp);
+    }
   }
 
   function handleCanvasClick(e) {
     if (!editMode) return;
     if (editTool === "select") return;
+    if (editTool === "add-line") return; // 线烟由 mousedown/mouseup 处理
     // 如果点击的是已有标记，不处理（让标记自己处理）
-    if (e.target.closest(".marker") || e.target.closest(".zoom-btn") || e.target.closest(".zoom-level")) return;
+    if (e.target.closest(".marker")) return;
 
     const canvas = document.getElementById("map-canvas");
     const rect = canvas.getBoundingClientRect();
@@ -169,8 +180,34 @@
     addMarkerAt(editTool, x, y);
   }
 
-  function handleMouseDown(e) {
-    if (!editMode || editTool !== "select") return;
+  function handleCanvasMouseDown(e) {
+    if (!editMode) return;
+
+    // 线烟绘制模式
+    if (editTool === "add-line") {
+      const marker = e.target.closest(".marker");
+      if (marker) return; // 如果点到了已有标记，不处理
+
+      const canvas = document.getElementById("map-canvas");
+      const rect = canvas.getBoundingClientRect();
+      const startX = ((e.clientX - rect.left) / rect.width) * 100;
+      const startY = ((e.clientY - rect.top) / rect.height) * 100;
+
+      // 创建预览线元素
+      const previewEl = document.createElement("div");
+      previewEl.className = "line-smoke-preview";
+      previewEl.style.cssText = "position:absolute; left:" + startX + "%; top:" + startY + "%; height:6px; background:rgba(0,255,150,0.5); border:1px dashed rgba(0,255,150,0.8); border-radius:3px; transform-origin:left center; pointer-events:none; z-index:100; width:0;";
+
+      const markerLayer = document.getElementById("marker-layer");
+      if (markerLayer) markerLayer.parentElement.appendChild(previewEl);
+
+      lineDrawState = { startX: startX, startY: startY, previewEl: previewEl, canvasRect: rect };
+      e.preventDefault();
+      return;
+    }
+
+    // 选择/移动模式
+    if (editTool !== "select") return;
     const marker = e.target.closest(".marker");
     if (!marker) return;
 
@@ -182,7 +219,7 @@
     const rect = canvas.getBoundingClientRect();
 
     dragState = {
-      itemId,
+      itemId: itemId,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       canvasRect: rect,
@@ -197,15 +234,35 @@
         dragState.startStandY = dragState.item.standY;
       }
       isDragging = false;
-      // 不阻止事件传播，让 click 事件正常触发
     }
   }
 
-  function handleMouseMove(e) {
+  function handleEditorMouseMove(e) {
+    // 线烟绘制预览
+    if (lineDrawState) {
+      var startX = lineDrawState.startX;
+      var startY = lineDrawState.startY;
+      var previewEl = lineDrawState.previewEl;
+      var canvasRect = lineDrawState.canvasRect;
+
+      var currentX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+      var currentY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+
+      var dx = currentX - startX;
+      var dy = currentY - startY;
+      var length = Math.sqrt(dx * dx + dy * dy);
+      var angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      previewEl.style.width = Math.max(0, length) + "%";
+      previewEl.style.transform = "translateY(-50%) rotate(" + angle + "deg)";
+      return;
+    }
+
+    // 原有的拖拽移动逻辑
     if (!dragState || !dragState.item) return;
 
-    const dx = ((e.clientX - dragState.startMouseX) / dragState.canvasRect.width) * 100;
-    const dy = ((e.clientY - dragState.startMouseY) / dragState.canvasRect.height) * 100;
+    var dx = ((e.clientX - dragState.startMouseX) / dragState.canvasRect.width) * 100;
+    var dy = ((e.clientY - dragState.startMouseY) / dragState.canvasRect.height) * 100;
 
     if (Math.abs(e.clientX - dragState.startMouseX) > 3 || Math.abs(e.clientY - dragState.startMouseY) > 3) {
       isDragging = true;
@@ -226,14 +283,46 @@
     }
   }
 
-  function handleMouseUp(e) {
+  function handleEditorMouseUp(e) {
+    // 线烟绘制完成
+    if (lineDrawState) {
+      var startX = lineDrawState.startX;
+      var startY = lineDrawState.startY;
+      var previewEl = lineDrawState.previewEl;
+      var canvasRect = lineDrawState.canvasRect;
+
+      // 移除预览元素
+      if (previewEl && previewEl.parentElement) {
+        previewEl.remove();
+      }
+
+      var currentX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+      var currentY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+
+      var dx = currentX - startX;
+      var dy = currentY - startY;
+      var length = Math.sqrt(dx * dx + dy * dy);
+      var angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      lineDrawState = null;
+
+      // 如果拖拽距离太小（< 2%），当做点击处理，创建默认线烟
+      if (length < 2) {
+        addMarkerAt("add-line", startX, startY);
+      } else {
+        addLineSmokeAt(startX, startY, length, angle);
+      }
+      return;
+    }
+
+    // 原有的 mouseup 逻辑
     if (!dragState) return;
 
     if (isDragging) {
       // 拖拽完成，保存草稿。阻止 click 事件以避免弹出面板
       saveDraft();
       // 临时阻止接下来的 click 事件
-      const preventClick = (ev) => {
+      var preventClick = function(ev) {
         ev.stopPropagation();
         ev.preventDefault();
         document.removeEventListener("click", preventClick, true);
@@ -318,7 +407,35 @@
     ctx.list.push(newItem);
     editSelectedId = id;
     saveDraft();
-    window.dispatchEvent(new Event("editor-data-updated"));
+    // 只重新渲染标记，不要触发完整的 renderMapDetail（会丢失工具栏）
+    app().renderMarkers();
+    setTimeout(() => showEditPanel(id), 200);
+  }
+
+  function addLineSmokeAt(x, y, length, angle) {
+    const ctx = getCurrentList();
+    if (!ctx) {
+      alert("请先选择一个标签页（常规烟位/穿墙点位/英雄技能）");
+      return;
+    }
+
+    const id = "edit_" + Date.now();
+    const newItem = {
+      id: id,
+      type: "line",
+      name: "新线烟",
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      length: Math.round(length * 10) / 10,
+      angle: Math.round(angle * 10) / 10,
+      desc: ""
+    };
+    if (ctx.type === "smoke") newItem.site = "";
+
+    ctx.list.push(newItem);
+    editSelectedId = id;
+    saveDraft();
+    app().renderMarkers();
     setTimeout(() => showEditPanel(id), 200);
   }
 
@@ -330,7 +447,8 @@
       ctx.list.splice(idx, 1);
       editSelectedId = null;
       saveDraft();
-      window.dispatchEvent(new Event("editor-data-updated"));
+      // 只重新渲染标记，不要触发完整的 renderMapDetail（会丢失工具栏）
+      app().renderMarkers();
     }
   }
 
@@ -823,7 +941,16 @@
           if (data.lineups) lineups[map.id] = data.lineups;
 
           saveDraft();
-          window.dispatchEvent(new Event("editor-data-updated"));
+          // 导入后需要完整重渲染，但编辑器模式需要恢复工具栏
+          if (isActive()) {
+            app().rerender();
+            setTimeout(() => {
+              addEditToolbar();
+              bindCanvasEvents();
+            }, 100);
+          } else {
+            window.dispatchEvent(new Event("editor-data-updated"));
+          }
           alert("导入成功！");
         } catch (err) {
           alert("导入失败：" + err.message);
@@ -888,6 +1015,12 @@
   // ==========================================
   // 暴露接口
   // ==========================================
+  // DOM 重建后重新绑定编辑器 UI（工具栏 + 画布事件）
+  function _rebindEditorUI() {
+    addEditToolbar();
+    bindCanvasEvents();
+  }
+
   window.MapEditor = {
     toggle,
     isActive,
@@ -898,7 +1031,8 @@
     restoreDraft,
     clearDraft,
     loadDraft,
-    saveDraft
+    saveDraft,
+    _rebindEditorUI
   };
 
   // 快捷键：E 切换编辑模式
