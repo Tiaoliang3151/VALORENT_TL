@@ -213,7 +213,6 @@
             <button class="side-filter-btn ${currentSideFilter === "all" ? "active" : ""}" data-side="all">全部</button>
             <button class="side-filter-btn ${currentSideFilter === "进攻方" ? "active attack" : ""}" data-side="进攻方">进攻方</button>
             <button class="side-filter-btn ${currentSideFilter === "防守方" ? "active defend" : ""}" data-side="防守方">防守方</button>
-            <button class="side-filter-btn ${currentSideFilter === "双通" ? "active both" : ""}" data-side="双通">双通</button>
           </div>
         </div>
         <div class="sidebar" id="sidebar"></div>

@@ -419,7 +419,7 @@
     // 标签编辑（攻防标签 + 自定义标签）
     fieldsHtml += `<div class="edit-section-title">标签</div>`;
     const currentTags = item.tags || [];
-    const presetTags = ["进攻方", "防守方", "双通"];
+    const presetTags = ["进攻方", "防守方"];
     fieldsHtml += `<div class="edit-form-group">`;
     fieldsHtml += `<label class="edit-group-label">预设标签</label>`;
     fieldsHtml += `<div class="tag-checkbox-group">`;

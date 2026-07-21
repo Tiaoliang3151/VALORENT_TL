@@ -286,13 +286,13 @@ const MAPS = [
     description: "两张据点地图，拥有传送门机制。封闭式近距离交战为主，控场者表现优秀。",
     commonSmokes: [
       { id: "bind_cs1", type: "ball", name: "A主道烟雾", site: "A", x: 32, y: 28, radius: 7, desc: "封住A主道视野，阻止防守方看到进攻路线", tags: ["进攻方"] },
-      { id: "bind_cs2", type: "ball", name: "A点Hookah烟", site: "A", x: 20, y: 42, radius: 6, desc: "封住Hookah出口，隔离A点防守方", tags: ["双通"] },
+      { id: "bind_cs2", type: "ball", name: "A点Hookah烟", site: "A", x: 20, y: 42, radius: 6, desc: "封住Hookah出口，隔离A点防守方", tags: [] },
       { id: "bind_cs3", type: "ball", name: "B短烟", site: "B", x: 65, y: 58, radius: 7, desc: "分割B短和B点，保护进攻方进点", tags: ["进攻方"] },
-      { id: "bind_cs4", type: "ball", name: "B长烟", site: "B", x: 78, y: 72, radius: 6, desc: "封住B长通道视野", tags: ["双通"] }
+      { id: "bind_cs4", type: "ball", name: "B长烟", site: "B", x: 78, y: 72, radius: 6, desc: "封住B长通道视野", tags: [] }
     ],
     wallbangs: [
-      { id: "bind_wb1", name: "A门穿点", x: 30, y: 22, desc: "A门外可穿透薄墙打击A点角落的防守方", tags: ["双通"] },
-      { id: "bind_wb2", name: "B短穿墙", x: 62, y: 55, desc: "B短通道墙壁可穿透，打击站点防守方", tags: ["双通"] }
+      { id: "bind_wb1", name: "A门穿点", x: 30, y: 22, desc: "A门外可穿透薄墙打击A点角落的防守方", tags: [] },
+      { id: "bind_wb2", name: "B短穿墙", x: 62, y: 55, desc: "B短通道墙壁可穿透，打击站点防守方", tags: [] }
     ]
   },
   {
@@ -300,9 +300,9 @@ const MAPS = [
     name: "隐世修所",
     enName: "Haven",
     sites: [
-      { id: "A", x: 64.6, y: 15.6, label: "A点", tags: ["双通"] },
-      { id: "B", x: 52.7, y: 49.9, label: "B点(中)", tags: ["双通"] },
-      { id: "C", x: 64.6, y: 84.1, label: "C点", tags: ["双通"] }
+      { id: "A", x: 64.6, y: 15.6, label: "A点", tags: [] },
+      { id: "B", x: 52.7, y: 49.9, label: "B点(中)", tags: [] },
+      { id: "C", x: 64.6, y: 84.1, label: "C点", tags: [] }
     ],
     image: "maps/haven_overview.png?v=20260721a",
     splash: "maps/haven_splash.jpg?v=20260721a",
@@ -316,21 +316,21 @@ const MAPS = [
       { id: "haven_cs5", type: "ball", name: "A Garden烟", site: "A", x: 71.8, y: 23.1, radius: 5, desc: "封住A Garden，切断防守方从花园回防路线", tags: ["进攻方"] },
       // B 点烟雾（中路）
       { id: "haven_cs6", type: "ball", name: "B大烟", site: "B", x: 36.0, y: 49.9, radius: 7, desc: "封住B大通道入口，掩护进攻方进入B点", tags: ["进攻方"] },
-      { id: "haven_cs7", type: "line", name: "B窗口烟", site: "B", x: 59.9, y: 45.6, length: 15, angle: 90.0, desc: "封住B窗口高台视野，隔离中路到B点的视线", tags: ["双通"] },
+      { id: "haven_cs7", type: "line", name: "B窗口烟", site: "B", x: 59.9, y: 45.6, length: 15, angle: 90.0, desc: "封住B窗口高台视野，隔离中路到B点的视线", tags: [] },
       { id: "haven_cs8", type: "ball", name: "中庭烟", site: "B", x: 47.9, y: 49.9, radius: 6, desc: "封住中庭区域，掩护进攻方进入B点", tags: ["进攻方"] },
       { id: "haven_cs9", type: "ball", name: "车库烟", site: "B", x: 26.5, y: 49.9, radius: 6, desc: "封住车库入口，阻止防守方通过Garage支援", tags: ["进攻方"] },
       // C 点烟雾
-      { id: "haven_cs10", type: "ball", name: "C大烟", site: "C", x: 59.9, y: 92.7, radius: 7, desc: "封住C Long超长通道，这是地图最长的视线", tags: ["双通"] },
-      { id: "haven_cs11", type: "line", name: "C包点隔断烟", site: "C", x: 64.6, y: 84.1, length: 18, angle: 180.0, desc: "在C包点内制造纵向隔断，分割包点空间", tags: ["双通"] },
+      { id: "haven_cs10", type: "ball", name: "C大烟", site: "C", x: 59.9, y: 92.7, radius: 7, desc: "封住C Long超长通道，这是地图最长的视线", tags: [] },
+      { id: "haven_cs11", type: "line", name: "C包点隔断烟", site: "C", x: 64.6, y: 84.1, length: 18, angle: 180.0, desc: "在C包点内制造纵向隔断，分割包点空间", tags: [] },
       { id: "haven_cs12", type: "ball", name: "C警家烟", site: "C", x: 74.2, y: 79.8, radius: 6, desc: "封住C警家回防路线，阻止防守方从CT回防C点", tags: ["进攻方"] },
-      { id: "haven_cs13", type: "ball", name: "C Garage烟", site: "C", x: 50.3, y: 73.4, radius: 6, desc: "封住C Garage入口，切断中路到C的连接", tags: ["双通"] },
+      { id: "haven_cs13", type: "ball", name: "C Garage烟", site: "C", x: 50.3, y: 73.4, radius: 6, desc: "封住C Garage入口，切断中路到C的连接", tags: [] },
       { id: "haven_cs14", type: "ball", name: "C Cubby烟", site: "C", x: 56.3, y: 87.3, radius: 5, desc: "封住C Cubby角落，清除常见的防守站位", tags: ["防守方"] }
     ],
     wallbangs: [
-      { id: "haven_wb1", name: "A Long穿点", x: 64.6, y: 4.9, desc: "A Long薄墙可穿透，打击A Garden的防守方", tags: ["双通"] },
-      { id: "haven_wb2", name: "C Long穿点", x: 64.6, y: 94.8, desc: "C Long墙壁可穿透，打击C Cubby蹲守的防守方", tags: ["双通"] },
-      { id: "haven_wb3", name: "Garage门穿点", x: 28.9, y: 49.9, desc: "车库门HP为400，破坏后可穿透打击门后敌人", tags: ["双通"] },
-      { id: "haven_wb4", name: "B Window穿点", x: 62.2, y: 43.4, desc: "B Window木窗可穿透，打击中路架枪的防守方", tags: ["双通"] }
+      { id: "haven_wb1", name: "A Long穿点", x: 64.6, y: 4.9, desc: "A Long薄墙可穿透，打击A Garden的防守方", tags: [] },
+      { id: "haven_wb2", name: "C Long穿点", x: 64.6, y: 94.8, desc: "C Long墙壁可穿透，打击C Cubby蹲守的防守方", tags: [] },
+      { id: "haven_wb3", name: "Garage门穿点", x: 28.9, y: 49.9, desc: "车库门HP为400，破坏后可穿透打击门后敌人", tags: [] },
+      { id: "haven_wb4", name: "B Window穿点", x: 62.2, y: 43.4, desc: "B Window木窗可穿透，打击中路架枪的防守方", tags: [] }
     ],
     plantSpots: [
       // A 点下包
@@ -359,14 +359,14 @@ const MAPS = [
     image: "",
     description: "垂直空间明显的地图，拥有绳索攀爬机制。防守方优势地图，需要大量技能配合进点。",
     commonSmokes: [
-      { id: "split_cs1", type: "ball", name: "A主烟", site: "A", x: 35, y: 30, radius: 7, desc: "封住A主道视野", tags: ["双通"] },
-      { id: "split_cs2", type: "ball", name: "A Heaven烟", site: "A", x: 25, y: 18, radius: 6, desc: "封住A Heaven高台", tags: ["双通"] },
-      { id: "split_cs3", type: "ball", name: "B主烟", site: "B", x: 65, y: 62, radius: 7, desc: "封住B主道视野", tags: ["双通"] },
-      { id: "split_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 48, radius: 6, desc: "封住中路通道", tags: ["双通"] }
+      { id: "split_cs1", type: "ball", name: "A主烟", site: "A", x: 35, y: 30, radius: 7, desc: "封住A主道视野", tags: [] },
+      { id: "split_cs2", type: "ball", name: "A Heaven烟", site: "A", x: 25, y: 18, radius: 6, desc: "封住A Heaven高台", tags: [] },
+      { id: "split_cs3", type: "ball", name: "B主烟", site: "B", x: 65, y: 62, radius: 7, desc: "封住B主道视野", tags: [] },
+      { id: "split_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 48, radius: 6, desc: "封住中路通道", tags: [] }
     ],
     wallbangs: [
-      { id: "split_wb1", name: "A Heaven穿点", x: 28, y: 15, desc: "A Heaven墙壁可穿透打击A点", tags: ["双通"] },
-      { id: "split_wb2", name: "B Rafter穿点", x: 72, y: 65, desc: "B Rafter区域可穿透", tags: ["双通"] }
+      { id: "split_wb1", name: "A Heaven穿点", x: 28, y: 15, desc: "A Heaven墙壁可穿透打击A点", tags: [] },
+      { id: "split_wb2", name: "B Rafter穿点", x: 72, y: 65, desc: "B Rafter区域可穿透", tags: [] }
     ]
   },
   {
@@ -374,20 +374,20 @@ const MAPS = [
     name: "义境空岛",
     enName: "Ascent",
     sites: [
-      { id: "A", x: 25, y: 40, label: "A点", tags: ["双通"] },
-      { id: "B", x: 75, y: 60, label: "B点", tags: ["双通"] }
+      { id: "A", x: 25, y: 40, label: "A点", tags: [] },
+      { id: "B", x: 75, y: 60, label: "B点", tags: [] }
     ],
     image: "",
     description: "威尼斯地图，中路有可加固的铁门。经典三通道平衡地图。",
     commonSmokes: [
-      { id: "ascent_cs1", type: "ball", name: "A主烟", site: "A", x: 30, y: 35, radius: 7, desc: "封住A主道视野", tags: ["双通"] },
-      { id: "ascent_cs2", type: "ball", name: "A点烟", site: "A", x: 22, y: 42, radius: 6, desc: "封住A点内部", tags: ["双通"] },
-      { id: "ascent_cs3", type: "ball", name: "B主烟", site: "B", x: 70, y: 62, radius: 7, desc: "封住B主道视野", tags: ["双通"] },
-      { id: "ascent_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 50, radius: 6, desc: "封住中路通道", tags: ["双通"] }
+      { id: "ascent_cs1", type: "ball", name: "A主烟", site: "A", x: 30, y: 35, radius: 7, desc: "封住A主道视野", tags: [] },
+      { id: "ascent_cs2", type: "ball", name: "A点烟", site: "A", x: 22, y: 42, radius: 6, desc: "封住A点内部", tags: [] },
+      { id: "ascent_cs3", type: "ball", name: "B主烟", site: "B", x: 70, y: 62, radius: 7, desc: "封住B主道视野", tags: [] },
+      { id: "ascent_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 50, radius: 6, desc: "封住中路通道", tags: [] }
     ],
     wallbangs: [
-      { id: "ascent_wb1", name: "A门穿点", x: 32, y: 30, desc: "A门薄墙可穿透", tags: ["双通"] },
-      { id: "ascent_wb2", name: "B窗穿点", x: 78, y: 55, desc: "B窗口墙壁可穿透", tags: ["双通"] }
+      { id: "ascent_wb1", name: "A门穿点", x: 32, y: 30, desc: "A门薄墙可穿透", tags: [] },
+      { id: "ascent_wb2", name: "B窗穿点", x: 78, y: 55, desc: "B窗口墙壁可穿透", tags: [] }
     ]
   },
   {
@@ -395,20 +395,20 @@ const MAPS = [
     name: "极地寒港",
     enName: "Breeze",
     sites: [
-      { id: "A", x: 25, y: 35, label: "A点", tags: ["双通"] },
-      { id: "B", x: 75, y: 65, label: "B点", tags: ["双通"] }
+      { id: "A", x: 25, y: 35, label: "A点", tags: [] },
+      { id: "B", x: 75, y: 65, label: "B点", tags: [] }
     ],
     image: "",
     description: "最大地图，拥有超长视线。适合狙击手和远程先锋，烟雾必不可少。",
     commonSmokes: [
-      { id: "breeze_cs1", type: "ball", name: "A Cave烟", site: "A", x: 18, y: 28, radius: 7, desc: "封住A Cave出口", tags: ["双通"] },
-      { id: "breeze_cs2", type: "ball", name: "A Shop烟", site: "A", x: 30, y: 38, radius: 6, desc: "封住A Shop区域", tags: ["双通"] },
-      { id: "breeze_cs3", type: "ball", name: "B Main烟", site: "B", x: 70, y: 60, radius: 7, desc: "封住B Main通道", tags: ["双通"] },
-      { id: "breeze_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 50, radius: 8, desc: "封住中路长走廊", tags: ["双通"] }
+      { id: "breeze_cs1", type: "ball", name: "A Cave烟", site: "A", x: 18, y: 28, radius: 7, desc: "封住A Cave出口", tags: [] },
+      { id: "breeze_cs2", type: "ball", name: "A Shop烟", site: "A", x: 30, y: 38, radius: 6, desc: "封住A Shop区域", tags: [] },
+      { id: "breeze_cs3", type: "ball", name: "B Main烟", site: "B", x: 70, y: 60, radius: 7, desc: "封住B Main通道", tags: [] },
+      { id: "breeze_cs4", type: "ball", name: "中烟", site: "B", x: 50, y: 50, radius: 8, desc: "封住中路长走廊", tags: [] }
     ],
     wallbangs: [
-      { id: "breeze_wb1", name: "A Cave穿点", x: 20, y: 25, desc: "A Cave墙壁可穿透", tags: ["双通"] },
-      { id: "breeze_wb2", name: "B Elbow穿点", x: 75, y: 70, desc: "B Elbow区域可穿透", tags: ["双通"] }
+      { id: "breeze_wb1", name: "A Cave穿点", x: 20, y: 25, desc: "A Cave墙壁可穿透", tags: [] },
+      { id: "breeze_wb2", name: "B Elbow穿点", x: 75, y: 70, desc: "B Elbow区域可穿透", tags: [] }
     ]
   },
   {
@@ -416,20 +416,20 @@ const MAPS = [
     name: "珍珠",
     enName: "Pearl",
     sites: [
-      { id: "A", x: 25, y: 40, label: "A点", tags: ["双通"] },
-      { id: "B", x: 75, y: 60, label: "B点", tags: ["双通"] }
+      { id: "A", x: 25, y: 40, label: "A点", tags: [] },
+      { id: "B", x: 75, y: 60, label: "B点", tags: [] }
     ],
     image: "",
     description: "里斯本水下城市，经典三通道设计，无特殊机制。纯拼枪法和战术的地图。",
     commonSmokes: [
-      { id: "pearl_cs1", type: "ball", name: "A Main烟", site: "A", x: 30, y: 35, radius: 7, desc: "封住A Main通道", tags: ["双通"] },
-      { id: "pearl_cs2", type: "ball", name: "A Art烟", site: "A", x: 20, y: 45, radius: 6, desc: "封住A Art区域", tags: ["双通"] },
-      { id: "pearl_cs3", type: "ball", name: "B Main烟", site: "B", x: 70, y: 58, radius: 7, desc: "封住B Main通道", tags: ["双通"] },
-      { id: "pearl_cs4", type: "ball", name: "中连接烟", site: "B", x: 50, y: 50, radius: 6, desc: "封住Mid Connector", tags: ["双通"] }
+      { id: "pearl_cs1", type: "ball", name: "A Main烟", site: "A", x: 30, y: 35, radius: 7, desc: "封住A Main通道", tags: [] },
+      { id: "pearl_cs2", type: "ball", name: "A Art烟", site: "A", x: 20, y: 45, radius: 6, desc: "封住A Art区域", tags: [] },
+      { id: "pearl_cs3", type: "ball", name: "B Main烟", site: "B", x: 70, y: 58, radius: 7, desc: "封住B Main通道", tags: [] },
+      { id: "pearl_cs4", type: "ball", name: "中连接烟", site: "B", x: 50, y: 50, radius: 6, desc: "封住Mid Connector", tags: [] }
     ],
     wallbangs: [
-      { id: "pearl_wb1", name: "A Main穿点", x: 32, y: 30, desc: "A Main墙壁可穿透", tags: ["双通"] },
-      { id: "pearl_wb2", name: "B Tower穿点", x: 78, y: 65, desc: "B Tower区域可穿透", tags: ["双通"] }
+      { id: "pearl_wb1", name: "A Main穿点", x: 32, y: 30, desc: "A Main墙壁可穿透", tags: [] },
+      { id: "pearl_wb2", name: "B Tower穿点", x: 78, y: 65, desc: "B Tower区域可穿透", tags: [] }
     ]
   },
   {
@@ -437,21 +437,21 @@ const MAPS = [
     name: "莲花",
     enName: "Lotus",
     sites: [
-      { id: "A", x: 20, y: 35, label: "A点", tags: ["双通"] },
-      { id: "B", x: 50, y: 50, label: "B点", tags: ["双通"] },
-      { id: "C", x: 80, y: 35, label: "C点", tags: ["双通"] }
+      { id: "A", x: 20, y: 35, label: "A点", tags: [] },
+      { id: "B", x: 50, y: 50, label: "B点", tags: [] },
+      { id: "C", x: 80, y: 35, label: "C点", tags: [] }
     ],
     image: "",
     description: "三据点地图，拥有旋转门和可破坏墙壁。机制复杂，战术多样。",
     commonSmokes: [
-      { id: "lotus_cs1", type: "ball", name: "A Tree烟", site: "A", x: 25, y: 30, radius: 6, desc: "封住A Tree通道", tags: ["双通"] },
-      { id: "lotus_cs2", type: "ball", name: "A Main烟", site: "A", x: 15, y: 40, radius: 7, desc: "封住A Main入口", tags: ["双通"] },
-      { id: "lotus_cs3", type: "ball", name: "C Main烟", site: "C", x: 75, y: 30, radius: 7, desc: "封住C Main入口", tags: ["双通"] },
-      { id: "lotus_cs4", type: "ball", name: "B Drop烟", site: "B", x: 50, y: 58, radius: 6, desc: "封住B Drop入口", tags: ["双通"] }
+      { id: "lotus_cs1", type: "ball", name: "A Tree烟", site: "A", x: 25, y: 30, radius: 6, desc: "封住A Tree通道", tags: [] },
+      { id: "lotus_cs2", type: "ball", name: "A Main烟", site: "A", x: 15, y: 40, radius: 7, desc: "封住A Main入口", tags: [] },
+      { id: "lotus_cs3", type: "ball", name: "C Main烟", site: "C", x: 75, y: 30, radius: 7, desc: "封住C Main入口", tags: [] },
+      { id: "lotus_cs4", type: "ball", name: "B Drop烟", site: "B", x: 50, y: 58, radius: 6, desc: "封住B Drop入口", tags: [] }
     ],
     wallbangs: [
-      { id: "lotus_wb1", name: "A Link穿点", x: 28, y: 38, desc: "A Link墙壁可穿透", tags: ["双通"] },
-      { id: "lotus_wb2", name: "C Link穿点", x: 72, y: 38, desc: "C Link墙壁可穿透", tags: ["双通"] }
+      { id: "lotus_wb1", name: "A Link穿点", x: 28, y: 38, desc: "A Link墙壁可穿透", tags: [] },
+      { id: "lotus_wb2", name: "C Link穿点", x: 72, y: 38, desc: "C Link墙壁可穿透", tags: [] }
     ]
   },
   {
@@ -459,20 +459,20 @@ const MAPS = [
     name: "天漠之峡",
     enName: "Fracture",
     sites: [
-      { id: "A", x: 30, y: 30, label: "A点", tags: ["双通"] },
-      { id: "B", x: 70, y: 70, label: "B点", tags: ["双通"] }
+      { id: "A", x: 30, y: 30, label: "A点", tags: [] },
+      { id: "B", x: 70, y: 70, label: "B点", tags: [] }
     ],
     image: "",
     description: "进攻方从地图两侧出生，防守方在中间。拥有地下滑索，独特的双面进攻地图。",
     commonSmokes: [
-      { id: "fracture_cs1", type: "ball", name: "A Main烟", site: "A", x: 35, y: 25, radius: 7, desc: "封住A Main入口", tags: ["双通"] },
-      { id: "fracture_cs2", type: "ball", name: "A Rope烟", site: "A", x: 25, y: 35, radius: 6, desc: "封住A Rope区域", tags: ["双通"] },
-      { id: "fracture_cs3", type: "ball", name: "B Main烟", site: "B", x: 65, y: 72, radius: 7, desc: "封住B Main入口", tags: ["双通"] },
-      { id: "fracture_cs4", type: "ball", name: "B Arcade烟", site: "B", x: 72, y: 65, radius: 6, desc: "封住B Arcade通道", tags: ["双通"] }
+      { id: "fracture_cs1", type: "ball", name: "A Main烟", site: "A", x: 35, y: 25, radius: 7, desc: "封住A Main入口", tags: [] },
+      { id: "fracture_cs2", type: "ball", name: "A Rope烟", site: "A", x: 25, y: 35, radius: 6, desc: "封住A Rope区域", tags: [] },
+      { id: "fracture_cs3", type: "ball", name: "B Main烟", site: "B", x: 65, y: 72, radius: 7, desc: "封住B Main入口", tags: [] },
+      { id: "fracture_cs4", type: "ball", name: "B Arcade烟", site: "B", x: 72, y: 65, radius: 6, desc: "封住B Arcade通道", tags: [] }
     ],
     wallbangs: [
-      { id: "fracture_wb1", name: "A Main穿点", x: 38, y: 22, desc: "A Main墙壁可穿透", tags: ["双通"] },
-      { id: "fracture_wb2", name: "B Arcade穿点", x: 75, y: 62, desc: "B Arcade区域可穿透", tags: ["双通"] }
+      { id: "fracture_wb1", name: "A Main穿点", x: 38, y: 22, desc: "A Main墙壁可穿透", tags: [] },
+      { id: "fracture_wb2", name: "B Arcade穿点", x: 75, y: 62, desc: "B Arcade区域可穿透", tags: [] }
     ]
   }
 ];
@@ -507,7 +507,7 @@ const LINEUPS = {
         desc: "站在A出生点左侧墙角",
         crosshair: "打开战术地图，将烟雾标记放在A主道入口",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B短进攻烟", type: "ball",
         x: 65, y: 58, radius: 7,
@@ -515,7 +515,7 @@ const LINEUPS = {
         desc: "站在B出生点出口处",
         crosshair: "打开战术地图，标记B短通道",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "Q", name: "A点燃烧弹", type: "other",
         x: 22, y: 38, radius: 5,
@@ -523,7 +523,7 @@ const LINEUPS = {
         desc: "站在A主道入口",
         crosshair: "瞄准A点Hookah出口地面",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -533,7 +533,7 @@ const LINEUPS = {
         desc: "站在B通道入口处",
         crosshair: "面向B点左上方，瞄准天空",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "A点线烟", type: "line",
         x: 28, y: 32, length: 20, angle: 120,
@@ -541,7 +541,7 @@ const LINEUPS = {
         desc: "站在中路靠近A点位置",
         crosshair: "面向A点方向，瞄准天空右侧",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "C", name: "A Hookah毒雾", type: "ball",
         x: 20, y: 42, radius: 5,
@@ -549,7 +549,7 @@ const LINEUPS = {
         desc: "站在A主道，靠近Hookah入口",
         crosshair: "瞄准Hookah门口上方",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     omen: [
       {
@@ -559,7 +559,7 @@ const LINEUPS = {
         desc: "站在A主道拐角处",
         crosshair: "瞄准A点内部上方天空",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B长烟", type: "ball",
         x: 78, y: 72, radius: 6,
@@ -567,7 +567,7 @@ const LINEUPS = {
         desc: "站在B短通道",
         crosshair: "瞄准B长通道方向天空",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     sova: [
       {        ability: "E", name: "A点侦察箭", type: "other",
@@ -576,14 +576,14 @@ const LINEUPS = {
         desc: "站在A出生点入口",
         crosshair: "瞄准A点方向天空，蓄力2格",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {        ability: "Q", name: "B点震击箭", type: "other",
         x: 72, y: 62, radius: 4,
         standX: 60, standY: 80,
         desc: "站在B通道入口",
         crosshair: "瞄准B点天花板角落，蓄力1格",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -597,7 +597,7 @@ const LINEUPS = {
         desc: "站在A Long入口拐角，打开战术地图",
         crosshair: "在战术地图上将烟雾标记放在A Heaven塔楼位置",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "A大烟", type: "ball",
         x: 59.9, y: 7.0, radius: 7,
@@ -605,7 +605,7 @@ const LINEUPS = {
         desc: "站在A Long入口",
         crosshair: "在战术地图上将烟雾标记放在A Long通道中段",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "C大烟", type: "ball",
         x: 59.9, y: 92.7, radius: 7,
@@ -613,7 +613,7 @@ const LINEUPS = {
         desc: "站在C Long入口",
         crosshair: "在战术地图上将烟雾标记放在C Long通道中段",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "C Garage烟", type: "ball",
         x: 50.3, y: 73.4, radius: 6,
@@ -621,7 +621,7 @@ const LINEUPS = {
         desc: "站在C Long入口",
         crosshair: "在战术地图上将烟雾标记放在Garage入口",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "Q", name: "A点燃烧弹(守包)", type: "other",
         x: 62.2, y: 15.6, radius: 5,
@@ -629,7 +629,7 @@ const LINEUPS = {
         desc: "站在A Garden的独轮车上方角落",
         crosshair: "转身寻找从左数第二个吊灯，瞄准其中间位置释放",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -639,7 +639,7 @@ const LINEUPS = {
         desc: "站在中路高处Window位置",
         crosshair: "垂直向下瞄准，覆盖中路到B点通道",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "C", name: "Garage毒雾", type: "ball",
         x: 28.9, y: 49.9, radius: 5,
@@ -647,7 +647,7 @@ const LINEUPS = {
         desc: "站在Garage入口旁的箱子后",
         crosshair: "瞄准Garage门口地面释放",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "C Long线烟", type: "line",
         x: 59.9, y: 92.7, length: 25, angle: 90.0,
@@ -655,7 +655,7 @@ const LINEUPS = {
         desc: "站在C点靠近C Long的位置",
         crosshair: "水平向右瞄准，覆盖C Long超长通道",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     omen: [
       {
@@ -665,7 +665,7 @@ const LINEUPS = {
         desc: "站在A Garden第一层台子角落",
         crosshair: "瞄准A Heaven塔楼上方天空，烟雾会自动飞到目标位置",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "C大深烟", type: "ball",
         x: 59.9, y: 92.7, radius: 6,
@@ -673,7 +673,7 @@ const LINEUPS = {
         desc: "站在C点靠近C Long的拐角",
         crosshair: "瞄准C Long方向天空右侧",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B窗口烟", type: "ball",
         x: 59.9, y: 45.6, radius: 6,
@@ -681,7 +681,7 @@ const LINEUPS = {
         desc: "站在中路靠B点一侧",
         crosshair: "瞄准B Window高台方向天空",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     // ===== 猎枭 Sova 详细技能点位 =====
     sova: [
@@ -697,7 +697,7 @@ const LINEUPS = {
         aimImg: "lineups/haven_sova_a_recon_aim.jpg",
         effectImg: "lineups/haven_sova_a_recon_effect.jpg",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_2",
         ability: "E", name: "A Heaven侦察(从A Garden)", type: "other",
@@ -709,7 +709,7 @@ const LINEUPS = {
         aimImg: "lineups/haven_sova_a_heaven_aim.jpg",
         effectImg: "lineups/haven_sova_a_heaven_effect.jpg",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_3",
         ability: "E", name: "A点低位屋顶侦察(从A Garden)", type: "other",
@@ -718,7 +718,7 @@ const LINEUPS = {
         desc: "站在A Garden第一层台子角落。箭会从箱子反弹后粘在屋顶下方",
         crosshair: "无反弹，1格蓄力。覆盖A点最大范围，是A点最佳侦察箭",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_4",
         ability: "E", name: "B点后方侦察(从A Garden)", type: "other",
@@ -727,7 +727,7 @@ const LINEUPS = {
         desc: "站在A Garden第一层台子角落。将HUD线尖端对准绿色方块边缘一半位置",
         crosshair: "无反弹，2格蓄力。箭飞越中路落在B点后方",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_5",
         ability: "E", name: "C点侦察(从C Link)", type: "other",
@@ -736,7 +736,7 @@ const LINEUPS = {
         desc: "站在C Link拐角。蓄力条右上角对准桶的阴影",
         crosshair: "无反弹，2格蓄力。覆盖C点大部分区域",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_6",
         ability: "E", name: "C大侦察(从C点)", type: "other",
@@ -745,7 +745,7 @@ const LINEUPS = {
         desc: "站在C点后方靠近C Link位置，无反弹2格蓄力。箭落在C Long树上方的树枝",
         crosshair: "瞄准C Long方向树梢位置",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_7",
         ability: "E", name: "A Garden防守侦察(从A点)", type: "other",
@@ -773,7 +773,7 @@ const LINEUPS = {
         desc: "站在A Long沙袋角落（地面层，不是上方）。箭1:HUD尖端在花瓣上方一像素；箭2:左菱形对准灯泡",
         crosshair: "2格蓄力。两支箭同步落下，压制A Heaven",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_10",
         ability: "Q", name: "A点默认下包震击(从A Long)", type: "other",
@@ -800,7 +800,7 @@ const LINEUPS = {
         desc: "站在A Link拐角的箱子旁。准星对准木梁，弓的右侧对准右边木梁",
         crosshair: "防守方使用。打击A点进攻方",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         id: "haven_sova_13",
         ability: "Q", name: "C点震击(从C Link)", type: "other",
@@ -809,7 +809,7 @@ const LINEUPS = {
         desc: "站在C Link靶子角落，贴墙直到停止。将猎枭小指关节对准墙壁装饰曲线",
         crosshair: "防守方使用。打击C点的进攻方",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       // --- 假箭 Fake Arrow ---
       {
         id: "haven_sova_14",
@@ -819,7 +819,7 @@ const LINEUPS = {
         desc: "站在A Garden第一层台子角落。将无人机图标尖端嵌在柱状结构的顶部间隙",
         crosshair: "假箭。让C点防守方误以为进攻方在打C，实际在打A",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       // --- 大招 ---
       {
         id: "haven_sova_15",
@@ -829,7 +829,7 @@ const LINEUPS = {
         desc: "站在中路高处。大招可穿透墙壁，对中路到B点一线的敌人造成伤害",
         crosshair: "瞄准中路方向，三发分别覆盖前中后三段",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -843,7 +843,7 @@ const LINEUPS = {
         desc: "站在A主道",
         crosshair: "打开战术地图标记A Heaven",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B主烟", type: "ball",
         x: 65, y: 62, radius: 7,
@@ -851,7 +851,7 @@ const LINEUPS = {
         desc: "站在B出生点",
         crosshair: "打开战术地图标记B主道",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -861,7 +861,7 @@ const LINEUPS = {
         desc: "站在中路高处",
         crosshair: "垂直向下瞄准",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     omen: [
       {
@@ -871,7 +871,7 @@ const LINEUPS = {
         desc: "站在A主道拐角",
         crosshair: "瞄准A Heaven上方天空",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -885,7 +885,7 @@ const LINEUPS = {
         desc: "站在A出生点",
         crosshair: "打开战术地图标记A主道",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B主烟", type: "ball",
         x: 70, y: 62, radius: 7,
@@ -893,7 +893,7 @@ const LINEUPS = {
         desc: "站在B出生点",
         crosshair: "打开战术地图标记B主道",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "Q", name: "A点燃烧弹", type: "other",
         x: 22, y: 42, radius: 5,
@@ -901,7 +901,7 @@ const LINEUPS = {
         desc: "站在A主道入口",
         crosshair: "瞄准A点内部地面",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -911,7 +911,7 @@ const LINEUPS = {
         desc: "站在中路入口高处",
         crosshair: "水平瞄准中路方向",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     omen: [
       {
@@ -921,7 +921,7 @@ const LINEUPS = {
         desc: "站在A出生点旁",
         crosshair: "瞄准A主道方向天空",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     sova: [
       {
@@ -931,7 +931,7 @@ const LINEUPS = {
         desc: "站在A出生点入口",
         crosshair: "瞄准A点方向，蓄力2格",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -945,7 +945,7 @@ const LINEUPS = {
         desc: "站在A出生点",
         crosshair: "打开战术地图标记A Cave",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B Main烟", type: "ball",
         x: 70, y: 60, radius: 7,
@@ -953,7 +953,7 @@ const LINEUPS = {
         desc: "站在B出生点",
         crosshair: "打开战术地图标记B Main",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -963,7 +963,7 @@ const LINEUPS = {
         desc: "站在A出生点高处",
         crosshair: "垂直向下瞄准，覆盖A长通道",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B长线烟", type: "line",
         x: 75, y: 60, length: 30, angle: 90,
@@ -971,7 +971,7 @@ const LINEUPS = {
         desc: "站在B出生点",
         crosshair: "垂直向下瞄准，覆盖B长通道",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -985,7 +985,7 @@ const LINEUPS = {
         desc: "站在A出生点",
         crosshair: "打开战术地图标记A Main",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B Main烟", type: "ball",
         x: 70, y: 58, radius: 7,
@@ -993,7 +993,7 @@ const LINEUPS = {
         desc: "站在B出生点",
         crosshair: "打开战术地图标记B Main",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -1003,7 +1003,7 @@ const LINEUPS = {
         desc: "站在中路入口",
         crosshair: "水平瞄准中路方向",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -1017,7 +1017,7 @@ const LINEUPS = {
         desc: "站在A出生点",
         crosshair: "打开战术地图标记A Main",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "C Main烟", type: "ball",
         x: 75, y: 30, radius: 7,
@@ -1025,7 +1025,7 @@ const LINEUPS = {
         desc: "站在C出生点",
         crosshair: "打开战术地图标记C Main",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -1035,7 +1035,7 @@ const LINEUPS = {
         desc: "站在中路高处",
         crosshair: "垂直向下瞄准",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   },
 
@@ -1049,7 +1049,7 @@ const LINEUPS = {
         desc: "站在A侧出生点",
         crosshair: "打开战术地图标记A Main",
         video: "",
-        tags: ["双通"] },
+        tags: [] },
       {
         ability: "E", name: "B Main烟", type: "ball",
         x: 65, y: 72, radius: 7,
@@ -1057,7 +1057,7 @@ const LINEUPS = {
         desc: "站在B侧出生点",
         crosshair: "打开战术地图标记B Main",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ],
     viper: [
       {
@@ -1067,7 +1067,7 @@ const LINEUPS = {
         desc: "站在中路",
         crosshair: "斜向瞄准",
         video: "",
-        tags: ["双通"] }
+        tags: [] }
     ]
   }
 };
