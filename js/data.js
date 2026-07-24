@@ -27,10 +27,10 @@ const AGENTS = [
       { key: "X", name: "天基光束",   enName: "Orbital Strike", isUlt: true }
     ]
   },
-  { id: "viper", name: "蝰蛇", enName: "Viper", role: "controller", smokeType: "line",
+  { id: "viper", name: "蝰蛇", enName: "Viper", role: "controller", smokeType: "both",
     abilities: [
       { key: "C", name: "毒幕",       enName: "Poison Cloud", isSmoke: true },
-      { key: "Q", name: "翳云",   enName: "Toxic Screen",  isSmoke: true, smokeForm: "line" },
+      { key: "Q", name: "毒幕屏障", enName: "Toxic Screen", isSmoke: true, smokeForm: "line" },
       { key: "E", name: "蛇咬",       enName: "Snake Bite" },
       { key: "X", name: "蝰腹",   enName: "Viper's Pit", isUlt: true }
     ]
@@ -53,87 +53,69 @@ const AGENTS = [
   },
   { id: "harbor", name: "海神", enName: "Harbor", role: "controller", smokeType: "both",
     abilities: [
-      { key: "C", name: "海盾",       enName: "Cove", isSmoke: true, smokeForm: "ball" },
-      { key: "Q", name: "惊涛涌浪",       enName: "Cascade" },
-      { key: "E", name: "狂潮",       enName: "High Tide", isSmoke: true, smokeForm: "line" },
-      { key: "X", name: "爆泉",       enName: "Reckoning", isUlt: true }
+      { key: "C", name: "巨浪屏障",   enName: "Cove", isSmoke: true, smokeForm: "ball" },
+      { key: "Q", name: "巨浪冲击",   enName: "Cascade" },
+      { key: "E", name: "巨浪高墙",   enName: "High Tide", isSmoke: true, smokeForm: "line" },
+      { key: "X", name: "清算",       enName: "Reckoning", isUlt: true }
     ]
   },
   { id: "clove", name: "暮蝶", enName: "Clove", role: "controller", smokeType: "ball",
     abilities: [
-      { key: "C", name: "璞玿煙雲",       enName: "Pick-Me-Up" },
-      { key: "Q", name: "精神再生",       enName: "Meddle" },
-      { key: "E", name: "骇奇干涉",       enName: "Ruse", isSmoke: true },
-      { key: "X", name: "續命開關",       enName: "Not Dead Yet", isUlt: true }
+      { key: "C", name: "重拾",       enName: "Pick-Me-Up" },
+      { key: "Q", name: "干扰",       enName: "Meddle" },
+      { key: "E", name: "诡计",       enName: "Ruse", isSmoke: true },
+      { key: "X", name: "尚未死亡",   enName: "Not Dead Yet", isUlt: true }
     ]
   },
-  { id: "miks", name: "米克斯", enName: "Miks", role: "controller", smokeType: "ball",
-    abilities: [
-      { key: "C", name: "技能C",      enName: "Ability C" },
-      { key: "Q", name: "技能Q",      enName: "Ability Q" },
-      { key: "E", name: "烟雾技能",   enName: "Smoke Ability", isSmoke: true },
-      { key: "X", name: "终极技能",   enName: "Ultimate", isUlt: true }
-    ]
-  },
-
   // --- 哨兵 ---
   { id: "killjoy", name: "奇乐", enName: "Killjoy", role: "sentinel", smokeType: "none",
     abilities: [
       { key: "C", name: "纳米蜂群",   enName: "Nanoswarm" },
-      { key: "Q", name: "哨戒炮台", enName: "Alarmbot" },
-      { key: "E", name: "自动哨兵",   enName: "Turret" },
-      { key: "X", name: "全面封锁",       enName: "Lockdown", isUlt: true }
+      { key: "Q", name: "警报机器人", enName: "Alarmbot" },
+      { key: "E", name: "炮塔",       enName: "Turret" },
+      { key: "X", name: "全面封锁",   enName: "Lockdown", isUlt: true }
     ]
   },
   { id: "cypher", name: "零", enName: "Cypher", role: "sentinel", smokeType: "none",
     abilities: [
-      { key: "C", name: "震慑丝线",     enName: "Trapwire" },
-      { key: "Q", name: "赛博囚笼",   enName: "Cyber Cage" },
-      { key: "E", name: "战术监控", enName: "Spycam" },
-      { key: "X", name: "神经解析",   enName: "Neural Theft", isUlt: true }
+      { key: "C", name: "绊线",       enName: "Trapwire" },
+      { key: "Q", name: "赛博牢笼",   enName: "Cyber Cage" },
+      { key: "E", name: "间谍相机",   enName: "Spycam" },
+      { key: "X", name: "神经窃取",   enName: "Neural Theft", isUlt: true }
     ]
   },
   { id: "sage", name: "贤者", enName: "Sage", role: "sentinel", smokeType: "none",
     abilities: [
-      { key: "C", name: "玉城",     enName: "Barrier Orb" },
-      { key: "Q", name: "薄冰",     enName: "Slow Orb" },
-      { key: "E", name: "逢春",     enName: "Healing Orb" },
-      { key: "X", name: "再起",       enName: "Resurrection", isUlt: true }
+      { key: "C", name: "屏障宝珠", enName: "Barrier Orb" },
+      { key: "Q", name: "减速宝珠", enName: "Slow Orb" },
+      { key: "E", name: "治疗宝珠", enName: "Healing Orb" },
+      { key: "X", name: "复活",     enName: "Resurrection", isUlt: true }
     ]
   },
-  { id: "chamber", name: "尚勃勒", enName: "Chamber", role: "sentinel", smokeType: "none",
+  { id: "chamber", name: "钱博尔", enName: "Chamber", role: "sentinel", smokeType: "none",
     abilities: [
-      { key: "C", name: "贵宾限行",       enName: "Trademark" },
-      { key: "Q", name: "金牌猎头",       enName: "Headhunter" },
-      { key: "E", name: "闪转自如",       enName: "Rendezvous" },
-      { key: "X", name: "孤高火力",   enName: "Tour de Force", isUlt: true }
+      { key: "C", name: "商标",       enName: "Trademark" },
+      { key: "Q", name: "猎头者",     enName: "Headhunter" },
+      { key: "E", name: "集合点",     enName: "Rendezvous" },
+      { key: "X", name: "巡演",       enName: "Tour de Force", isUlt: true }
     ]
   },
   { id: "deadlock", name: "钢锁", enName: "Deadlock", role: "sentinel", smokeType: "none",
     abilities: [
-      { key: "C", name: "声感陷阱", enName: "Sonic Sensor" },
-      { key: "Q", name: "重力捕网",     enName: "GravNet" },
-      { key: "E", name: "阻域屏障",     enName: "Barrier Mesh" },
-      { key: "X", name: "断魂索道",       enName: "Annihilation", isUlt: true }
+      { key: "C", name: "声波传感器", enName: "Sonic Sensor" },
+      { key: "Q", name: "引力网",     enName: "GravNet" },
+      { key: "E", name: "屏障网格",   enName: "Barrier Mesh" },
+      { key: "X", name: "歼灭",       enName: "Annihilation", isUlt: true }
     ]
   },
   { id: "vyse", name: "维斯", enName: "Vyse", role: "sentinel", smokeType: "none",
     abilities: [
-      { key: "C", name: "断路铁壁",       enName: "Shear" },
-      { key: "Q", name: "弧光薔薇",   enName: "Arc Rose" },
-      { key: "E", name: "荆棘鐵網",     enName: "Razorvine" },
-      { key: "X", name: "叢棘盛開",   enName: "Steel Garden", isUlt: true }
+      { key: "C", name: "剪断",       enName: "Shear" },
+      { key: "Q", name: "弧光玫瑰",   enName: "Arc Rose" },
+      { key: "E", name: "荆棘藤",     enName: "Razorvine" },
+      { key: "X", name: "钢铁花园",   enName: "Steel Garden", isUlt: true }
     ]
   },
-  { id: "veto", name: "维托", enName: "Veto", role: "sentinel", smokeType: "none",
-    abilities: [
-      { key: "C", name: "技能C",      enName: "Ability C" },
-      { key: "Q", name: "技能Q",      enName: "Ability Q" },
-      { key: "E", name: "技能E",      enName: "Ability E" },
-      { key: "X", name: "终极技能",   enName: "Ultimate", isUlt: true }
-    ]
-  },
-
   // --- 先锋 ---
   { id: "sova", name: "猎枭", enName: "Sova", role: "initiator", smokeType: "none",
     abilities: [
@@ -145,63 +127,54 @@ const AGENTS = [
   },
   { id: "breach", name: "铁臂", enName: "Breach", role: "initiator", smokeType: "none",
     abilities: [
-      { key: "C", name: "闪点突破",     enName: "Flashpoint" },
-      { key: "Q", name: "山崩地陷",       enName: "Aftershock" },
-      { key: "E", name: "震波冲击",     enName: "Fault Line" },
-      { key: "X", name: "惊雷卷地",   enName: "Rolling Thunder", isUlt: true }
+      { key: "C", name: "闪现点",     enName: "Flashpoint" },
+      { key: "Q", name: "余震",       enName: "Aftershock" },
+      { key: "E", name: "断层线",     enName: "Fault Line" },
+      { key: "X", name: "雷霆万钧",   enName: "Rolling Thunder", isUlt: true }
     ]
   },
   { id: "skye", name: "斯凯", enName: "Skye", role: "initiator", smokeType: "none",
     abilities: [
-      { key: "C", name: "辟林之虎",       enName: "Trailblazer" },
-      { key: "Q", name: "引路之隼",       enName: "Guiding Light" },
-      { key: "E", name: "愈生之息",       enName: "Regrowth" },
-      { key: "X", name: "追猎之灵",     enName: "Seekers", isUlt: true }
+      { key: "C", name: "开拓者",     enName: "Trailblazer" },
+      { key: "Q", name: "引路之光",   enName: "Guiding Light" },
+      { key: "E", name: "再生",       enName: "Regrowth" },
+      { key: "X", name: "猎食者",     enName: "Seekers", isUlt: true }
     ]
   },
   { id: "kayo", name: "KAY/O", enName: "KAY/O", role: "initiator", smokeType: "none",
     abilities: [
-      { key: "C", name: "碎片溢出",       enName: "Frag/ment" },
-      { key: "Q", name: "零点嗅探",       enName: "ZERO/point" },
-      { key: "E", name: "闪存过载",       enName: "Suppression" },
-      { key: "X", name: "无效命令",       enName: "NULL/cmd", isUlt: true }
+      { key: "C", name: "碎片手雷",   enName: "Frag/ment" },
+      { key: "Q", name: "零点/点位",  enName: "ZERO/point" },
+      { key: "E", name: "压制",       enName: "Suppression" },
+      { key: "X", name: "无效/命令",  enName: "NULL/cmd", isUlt: true }
     ]
   },
   { id: "fade", name: "黑梦", enName: "Fade", role: "initiator", smokeType: "none",
     abilities: [
-      { key: "C", name: "鞭兽",       enName: "Prowler" },
-      { key: "Q", name: "幽爪",       enName: "Seize" },
-      { key: "E", name: "诡眼",       enName: "Haunt" },
-      { key: "X", name: "夜临",       enName: "Nightfall", isUlt: true }
+      { key: "C", name: "潜行者",     enName: "Prowler" },
+      { key: "Q", name: "束缚",       enName: "Seize" },
+      { key: "E", name: "魅影",       enName: "Haunt" },
+      { key: "X", name: "夜幕降临",   enName: "Nightfall", isUlt: true }
     ]
   },
   { id: "gekko", name: "盖可", enName: "Gekko", role: "initiator", smokeType: "none",
     abilities: [
-      { key: "C", name: "眩晕光波",       enName: "Mosh Pit" },
-      { key: "Q", name: "顽皮搭档",       enName: "Dizzy" },
-      { key: "E", name: "嗨爆全场",       enName: "Wingman" },
-      { key: "X", name: "飞奔",       enName: "Thrash", isUlt: true }
+      { key: "C", name: "魔坑",       enName: "Mosh Pit" },
+      { key: "Q", name: "晕眩",       enName: "Dizzy" },
+      { key: "E", name: "僚机",       enName: "Wingman" },
+      { key: "X", name: "狂暴",       enName: "Thrash", isUlt: true }
     ]
   },
-  { id: "tejo", name: "泰乔", enName: "Tejo", role: "initiator", smokeType: "none",
-    abilities: [
-      { key: "C", name: "技能C",      enName: "Ability C" },
-      { key: "Q", name: "技能Q",      enName: "Ability Q" },
-      { key: "E", name: "技能E",      enName: "Ability E" },
-      { key: "X", name: "终极技能",   enName: "Ultimate", isUlt: true }
-    ]
-  },
-
   // --- 决斗者 ---
   { id: "phoenix", name: "不死鸟", enName: "Phoenix", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "火冒三丈",       enName: "Blaze" },
-      { key: "Q", name: "闪光曲球",       enName: "Curveball" },
-      { key: "E", name: "再火一回",       enName: "Hot Hands" },
-      { key: "X", name: "重来",       enName: "Run It Back", isUlt: true }
+      { key: "C", name: "烈焰",       enName: "Blaze" },
+      { key: "Q", name: "曲球",       enName: "Curveball" },
+      { key: "E", name: "火手",       enName: "Hot Hands" },
+      { key: "X", name: "倒流时光",   enName: "Run It Back", isUlt: true }
     ]
   },
-  { id: "jett", name: "捷风", enName: "Jett", role: "duelist", smokeType: "none",
+  { id: "jett", name: "捷风", enName: "Jett", role: "duelist", smokeType: "ball",
     abilities: [
       { key: "C", name: "瞬云",       enName: "Cloudburst", isSmoke: true, smokeForm: "ball" },
       { key: "Q", name: "凌空",       enName: "Updraft" },
@@ -211,53 +184,45 @@ const AGENTS = [
   },
   { id: "reyna", name: "芮娜", enName: "Reyna", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "夺魄",      enName: "Leer" },
-      { key: "Q", name: "噬尽",       enName: "Devour" },
-      { key: "E", name: "逐散",       enName: "Dismiss" },
+      { key: "C", name: "邪视",       enName: "Leer" },
+      { key: "Q", name: "吞噬",       enName: "Devour" },
+      { key: "E", name: "遣散",       enName: "Dismiss" },
       { key: "X", name: "女皇",       enName: "Empress", isUlt: true }
     ]
   },
   { id: "raze", name: "雷兹", enName: "Raze", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "惊喜翻腾",     enName: "Blast Pack" },
-      { key: "Q", name: "花车巡游", enName: "Boom Bot" },
-      { key: "E", name: "彩雷飞溢",       enName: "Paint Shells" },
-      { key: "X", name: "晚安焰火",   enName: "Showstopper", isUlt: true }
+      { key: "C", name: "爆破包",     enName: "Blast Pack" },
+      { key: "Q", name: "爆破机器人", enName: "Boom Bot" },
+      { key: "E", name: "彩绘弹",     enName: "Paint Shells" },
+      { key: "X", name: "压轴登场",   enName: "Showstopper", isUlt: true }
     ]
   },
   { id: "yoru", name: "夜露", enName: "Yoru", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "不请自来",       enName: "Fakeout" },
-      { key: "Q", name: "出其不意",       enName: "Blindside" },
-      { key: "E", name: "裂隙",       enName: "Gatecrash" },
-      { key: "X", name: "鬼不觉",   enName: "Dimensional Drift", isUlt: true }
+      { key: "C", name: "伪装",       enName: "Fakeout" },
+      { key: "Q", name: "盲区",       enName: "Blindside" },
+      { key: "E", name: "砸门",       enName: "Gatecrash" },
+      { key: "X", name: "维度漂移",   enName: "Dimensional Drift", isUlt: true }
     ]
   },
   { id: "neon", name: "霓虹", enName: "Neon", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "高速通道",     enName: "Relay Bolt" },
-      { key: "Q", name: "闪电弹球",       enName: "Fast Lane" },
-      { key: "E", name: "充能疾驰",   enName: "High Gear" },
-      { key: "X", name: "超限暴走",       enName: "Overdrive", isUlt: true }
+      { key: "C", name: "快道",         enName: "Fast Lane" },
+      { key: "Q", name: "接力雷电",     enName: "Relay Bolt" },
+      { key: "E", name: "充能疾驰",     enName: "High Gear" },
+      { key: "X", name: "超限暴走",     enName: "Overdrive", isUlt: true }
     ]
   },
   { id: "iso", name: "壹决", enName: "Iso", role: "duelist", smokeType: "none",
     abilities: [
-      { key: "C", name: "应变",       enName: "Undercut" },
-      { key: "Q", name: "双源",       enName: "Double Tap" },
-      { key: "E", name: "削减",       enName: "Contingency" },
-      { key: "X", name: "歼灭",       enName: "Kill Contract", isUlt: true }
+      { key: "C", name: "切低球",     enName: "Undercut" },
+      { key: "Q", name: "双击",       enName: "Double Tap" },
+      { key: "E", name: "应急预案",   enName: "Contingency" },
+      { key: "X", name: "死亡契约",   enName: "Kill Contract", isUlt: true }
     ]
   },
-  { id: "waylay", name: "维蕾", enName: "Waylay", role: "duelist", smokeType: "none",
-    abilities: [
-      { key: "C", name: "技能C",      enName: "Ability C" },
-      { key: "Q", name: "技能Q",      enName: "Ability Q" },
-      { key: "E", name: "技能E",      enName: "Ability E" },
-      { key: "X", name: "终极技能",   enName: "Ultimate", isUlt: true }
-    ]
-  }
-];
+  ];
 
 // ------------------------------------------
 // 3. 地图列表
@@ -275,7 +240,7 @@ const AGENTS = [
 // ------------------------------------------
 const MAPS = [
   { id: "bind",
-    name: "源工重镇",
+    name: "遗落境地",
     enName: "Bind",
   rotate180: true,
     sites: [
@@ -371,7 +336,7 @@ const MAPS = [
   },
   {
     id: "split",
-    name: "霓虹町",
+    name: "分裂",
     enName: "Split",
   rotate180: true,
     sites: [
@@ -555,7 +520,7 @@ const MAPS = [
   },
   {
     id: "corrode",
-    name: "锈蚀",
+    name: "腐蚀",
     enName: "Corrode",
   rotate180: true,
     sites: [
@@ -16768,130 +16733,7 @@ const LINEUPS = {
         "video": "https://www.youtube.com/watch?v=pn_zkxomSr4",
         "tags": ["防守方"],
       },
-    ],
-    "miks": [
-      {
-        "id": "bind_miks_Q_attack_0",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 26.07,
-        "y": 26.7,
-        "standX": 30.19,
-        "standY": 49.39,
-        "desc": "站位: (30.19, 49.39)",
-        "crosshair": "技能落点: (26.07, 26.7)",
-        "video": "https://www.youtube.com/watch?v=4ab71f00-f4b8-4142-8c15-06a234a2e1c1",
-        "tags": ["进攻方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_0",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 28.77,
-        "y": 49.53,
-        "standX": 68.92,
-        "standY": 41.51,
-        "desc": "站位: (68.92, 41.51)",
-        "crosshair": "技能落点: (28.77, 49.53)",
-        "video": "https://www.youtube.com/watch?v=3911ca93-5cdf-4da1-bcd8-11ca48689e6b",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_1",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 14.1,
-        "y": 34.14,
-        "standX": 66.73,
-        "standY": 44.5,
-        "desc": "站位: (66.73, 44.5)",
-        "crosshair": "技能落点: (14.1, 34.14)",
-        "video": "https://www.youtube.com/watch?v=e0837062-226c-4725-9b3f-0f86a2f628f8",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_2",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 66.89,
-        "y": 31.55,
-        "standX": 27.19,
-        "standY": 28.68,
-        "desc": "站位: (27.19, 28.68)",
-        "crosshair": "技能落点: (66.89, 31.55)",
-        "video": "https://www.youtube.com/watch?v=f35f3c34-f94f-43c9-a97a-1bb0923b701b",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_3",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 34.52,
-        "y": 31.04,
-        "standX": 67.41,
-        "standY": 42.76,
-        "desc": "站位: (67.41, 42.76)",
-        "crosshair": "技能落点: (34.52, 31.04)",
-        "video": "https://www.youtube.com/watch?v=427a3166-839a-4464-ada6-d424097ee008",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_4",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 73.23,
-        "y": 32.25,
-        "standX": 25.82,
-        "standY": 26.58,
-        "desc": "站位: (25.82, 26.58)",
-        "crosshair": "技能落点: (73.23, 32.25)",
-        "video": "https://www.youtube.com/watch?v=cdf3abf9-878f-4c2a-ad41-5f9711a75e25",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_5",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 68.54,
-        "y": 43.29,
-        "standX": 27.31,
-        "standY": 28.03,
-        "desc": "站位: (27.31, 28.03)",
-        "crosshair": "技能落点: (68.54, 43.29)",
-        "video": "https://www.youtube.com/watch?v=1c1e322e-36f1-4b2f-88bc-552296bd46df",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "bind_miks_Q_defense_6",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 27.79,
-        "y": 26.96,
-        "standX": 68.47,
-        "standY": 43.59,
-        "desc": "站位: (68.47, 43.59)",
-        "crosshair": "技能落点: (27.79, 26.96)",
-        "video": "https://www.youtube.com/watch?v=6360fb6d-06fd-4189-9252-70ce824e6a02",
-        "tags": ["防守方"],
-      },
-    ],
-    "phoenix": [
+    ],"phoenix": [
       {
         "id": "bind_phoenix_E_attack_0",
         "ability": "E",
@@ -55069,100 +54911,7 @@ const LINEUPS = {
         "video": "https://www.youtube.com/watch?v=1nv1IFEv7d4",
         "tags": ["防守方"],
       },
-    ],
-    "miks": [
-      {
-        "id": "split_miks_Q_attack_0",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 80.39,
-        "y": 23.04,
-        "standX": 87.96,
-        "standY": 66.45,
-        "desc": "站位: (87.96, 66.45)",
-        "crosshair": "技能落点: (80.39, 23.04)",
-        "video": "https://www.youtube.com/watch?v=ce5b5c7e-6979-48b3-b1dc-d6b55ef3a17e",
-        "tags": ["进攻方"],
-      },
-      {
-        "id": "split_miks_Q_attack_1",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "米克斯 眩晕 点位",
-        "type": "other",
-        "x": 74.4,
-        "y": 40.11,
-        "standX": 87.9,
-        "standY": 66.53,
-        "desc": "站位: (87.9, 66.53)",
-        "crosshair": "技能落点: (74.4, 40.11)",
-        "video": "https://www.youtube.com/watch?v=2fc4624b-a29a-44bd-944d-38a9d66c54ed",
-        "tags": ["进攻方"],
-      },
-      {
-        "id": "split_miks_Q_attack_2",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "MIKS STUN LINEUP B LOBBY TO OPEN PLANT",
-        "type": "other",
-        "x": 10.65,
-        "y": 33.44,
-        "standX": 19.47,
-        "standY": 65.22,
-        "desc": "站位: (19.47, 65.22)",
-        "crosshair": "技能落点: (10.65, 33.44)",
-        "video": "https://www.youtube.com/watch?v=sMl4ey5Ah0A",
-        "tags": ["进攻方"],
-      },
-      {
-        "id": "split_miks_Q_attack_3",
-        "ability": "Q",
-        "abilityName": "眩晕",
-        "name": "MIKS STUN LINEUP A-SPAWN TO RAMPS",
-        "type": "other",
-        "x": 65.67,
-        "y": 49.23,
-        "standX": 66.88,
-        "standY": 82.87,
-        "desc": "站位: (66.88, 82.87)",
-        "crosshair": "技能落点: (65.67, 49.23)",
-        "video": "https://www.youtube.com/watch?v=L9wF1bVVAJc",
-        "tags": ["进攻方"],
-      },
-      {
-        "id": "split_miks_E_defense_0",
-        "ability": "E",
-        "abilityName": "治疗",
-        "name": "MIKS HEAL LINE-UP SCREENS TO ALLY",
-        "type": "other",
-        "x": 20.59,
-        "y": 22.68,
-        "standX": 72.3,
-        "standY": 14.84,
-        "desc": "站位: (72.3, 14.84)",
-        "crosshair": "技能落点: (20.59, 22.68)",
-        "video": "https://www.youtube.com/watch?v=hMox96REE9g",
-        "tags": ["防守方"],
-      },
-      {
-        "id": "split_miks_E_defense_1",
-        "ability": "E",
-        "abilityName": "治疗",
-        "name": "MIKS HEAL LINEUP BACKSITE B TO SCREENS",
-        "type": "other",
-        "x": 69.56,
-        "y": 17.46,
-        "standX": 3.43,
-        "standY": 33.42,
-        "desc": "站位: (3.43, 33.42)",
-        "crosshair": "技能落点: (69.56, 17.46)",
-        "video": "https://www.youtube.com/watch?v=0qgIgqFzaA8",
-        "tags": ["防守方"],
-      },
-    ],
-    "raze": [
+    ],"raze": [
       {
         "id": "split_raze_Q_attack_0",
         "ability": "Q",

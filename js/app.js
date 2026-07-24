@@ -12,12 +12,15 @@
 
   // 当前状态
   let currentMap = null;
-  let currentTab = "smokes"; // smokes | wallbangs | agents
+  let currentTab = "smoke-attack"; // smoke-attack | smoke-defend | wallbangs | plants | agents
   let currentAgent = null;
   let currentRoleFilter = "all";
   let currentAbilityFilter = "all"; // all | C | Q | E | X | none
   let currentPlantFilter = "all"; // all | open | safe | special | second-floor
   let currentSideFilter = "all"; // all | 进攻方 | 防守方 | 双通
+
+  // 进攻视图开关（切到 "进攻烟位" 时自动为 true，其余为 false；true 时所有坐标走 getMapPos 翻转 180°）
+  let isAttackView = false;
 
   // 地点名称显示状态
   let showLocationNames = true;
@@ -30,16 +33,31 @@
     X: "#00d4aa"  // 大招青
   };
 
-  // 地图坐标转换：默认所有地图旋转180度，使进攻方在上、防守方在下
+  // 地图坐标转换：
+  //   - 正向视图（防守烟 / 其他 tab）：数据坐标直接透传
+  //   - 进攻视图（进攻烟 tab）：CSS 将整体 .map-zoom-container rotate(180°)，
+  //     数据坐标仍保持原始正向，因此这里无需再做 100-x/y 翻转（否则会重复翻转）。
+  //     文字类标签通过 CSS 额外 rotate 180° 保持正向。
   function getMapPos(item) {
-    if (!currentMap || currentMap.rotate180 === false) {
-      return { x: item.x, y: item.y };
-    }
-    return { x: 100 - item.x, y: 100 - item.y };
+    return { x: item.x, y: item.y };
   }
 
-  function isMapRotated() {
-    return currentMap && currentMap.rotate180 !== false;
+  // 读取当前进攻视图是否开启（主要给 editor.js 判断坐标要反向与否）
+  function isAttackViewOn() { return !!isAttackView; }
+
+  // 统一设置当前视图（并决定 isAttackView）
+  //   tab: 'smoke-attack' / 'smoke-defend' / 'wallbangs' / 'plants' / 'agents'
+  function setCurrentTab(tab) {
+    currentTab = tab;
+    // 只有 "进攻烟位" tab 开启 180°进攻视图
+    isAttackView = (tab === "smoke-attack");
+  }
+
+  // 读取当前哪个烟数组在看（attack / defend / null）
+  function getCurrentSmokeSide() {
+    if (currentTab === "smoke-attack") return "attack";
+    if (currentTab === "smoke-defend") return "defend";
+    return null;
   }
 
   // ==========================================
@@ -126,12 +144,15 @@
   }
 
   function renderMapCard(map) {
-    const thumbRotated = map.rotate180 !== false ? ' style="transform: rotate(180deg);"' : '';
-    const previewContent = map.image
-      ? `<img src="${map.image}" class="map-card-img" alt="${map.name}"${thumbRotated}>`
+    const cardImage = map.splash || map.image;
+    const previewContent = cardImage
+      ? `<div class="map-card-img-wrap">
+           <img src="${cardImage}" class="map-card-img" alt="${map.name}">
+           <div class="map-card-site-overlay">${generateSiteOverlaySvg(map)}</div>
+         </div>`
       : generateMapSvg(map, true);
     return `
-      <div class="map-card" data-map-id="${map.id}">
+      <a class="map-card" href="#/map/${map.id}" data-map-id="${map.id}">
         <div class="map-card-preview">
           ${previewContent}
         </div>
@@ -143,7 +164,7 @@
           </div>
           <div class="map-card-desc">${map.description}</div>
         </div>
-      </div>
+      </a>
     `;
   }
 
@@ -172,8 +193,11 @@
       </div>
 
       <div class="tab-bar">
-        <button class="tab-btn ${currentTab === "smokes" ? "active" : ""}" data-tab="smokes">
-          常规烟位 (${map.commonSmokes.length})
+        <button class="tab-btn ${currentTab === "smoke-attack" ? "active" : ""}" data-tab="smoke-attack">
+          进攻烟位 (${(map.attackSmokes || []).length})
+        </button>
+        <button class="tab-btn ${currentTab === "smoke-defend" ? "active" : ""}" data-tab="smoke-defend">
+          防守烟位 (${(map.defendSmokes || []).length})
         </button>
         <button class="tab-btn ${currentTab === "wallbangs" ? "active" : ""}" data-tab="wallbangs">
           穿墙点位 (${map.wallbangs.length})
@@ -196,9 +220,11 @@
               </div>
             </div>
           ` : ""}
-          <div class="map-canvas ${map.image ? "has-image" : ""}" id="map-canvas">
+          <div class="map-canvas ${map.image ? "has-image" : ""} ${isAttackView ? "is-attack-view" : ""}" id="map-canvas">
             <div class="map-zoom-container" id="map-zoom-container">
-              ${map.image ? `<img src="${map.image}" class="map-bg-img ${isMapRotated() ? 'map-rotated' : ''}" alt="${map.name}">` : generateMapSvg(map, false)}
+              ${map.image
+                ? `<img src="${map.image}" class="map-bg-img" alt="${map.name}">`
+                : generateMapSvg(map, false)}
               <div class="marker-layer" id="marker-layer"></div>
             </div>
             <div class="map-location-toggle" id="map-location-toggle">
@@ -209,11 +235,13 @@
             <div class="map-side-label defenders">防守方 DEFENDERS</div>
           </div>
           <div class="legend" id="legend"></div>
+          ${(currentTab === "wallbangs" || currentTab === "plants") ? `
           <div class="side-filter-bar" id="side-filter-bar">
             <button class="side-filter-btn ${currentSideFilter === "all" ? "active" : ""}" data-side="all">全部</button>
             <button class="side-filter-btn ${currentSideFilter === "进攻方" ? "active attack" : ""}" data-side="进攻方">进攻方</button>
             <button class="side-filter-btn ${currentSideFilter === "防守方" ? "active defend" : ""}" data-side="防守方">防守方</button>
           </div>
+          ` : ""}
         </div>
         <div class="sidebar" id="sidebar"></div>
       </div>
@@ -224,7 +252,7 @@
     // 绑定标签切换
     app.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        currentTab = btn.dataset.tab;
+        setCurrentTab(btn.dataset.tab);
         if (currentTab !== "agents") {
           currentAgent = null;
         }
@@ -297,19 +325,46 @@
   // ==========================================
   // 地点名称渲染
   // ==========================================
+  // ==========================================
+  // 渲染 A/B 站点标签 + 地名 labels（统一为 HTML label，方便编辑器拖拽）
+  // ==========================================
   function renderLocationNames() {
     const layer = document.getElementById("marker-layer");
     if (!layer || !currentMap) return;
 
-    // 移除已有的地点标签
+    // 移除已有的地点/站点标签
     layer.parentElement.querySelectorAll(".map-location-label").forEach(el => el.remove());
 
+    const siteFontSize = getSiteFontSize(currentMap);
+    const locFontSize = getLocationFontSize(currentMap);
+
+    // ---- 1. 站点 A/B/C：独立红色半透明大字 ----
+    if (currentMap.sites && currentMap.sites.length) {
+      currentMap.sites.forEach((site, idx) => {
+        const label = document.createElement("div");
+        label.className = "map-location-label type-site";
+        label.dataset.labelKind = "site";
+        label.dataset.labelIndex = idx;
+        const pos = getMapPos(site);
+        label.textContent = site.id;
+        label.style.left = pos.x + "%";
+        label.style.top = (pos.y + 1.5) + "%";
+        label.style.fontSize = (site.fontSize || siteFontSize) + "px";
+        label.style.color = "rgba(255, 70, 85, 0.5)";
+        label.style.fontWeight = "900";
+        layer.parentElement.appendChild(label);
+      });
+    }
+
+    // ---- 2. 地名 labels ----
     const locations = currentMap.locations;
     if (!locations || locations.length === 0) return;
 
-    locations.forEach(loc => {
+    locations.forEach((loc, idx) => {
       const label = document.createElement("div");
       label.className = "map-location-label" + (loc.type === "site" ? " type-site" : "");
+      label.dataset.labelKind = "location";
+      label.dataset.labelIndex = idx;
 
       // 非 site 类型在 toggle 关闭时隐藏
       if (loc.type !== "site" && !showLocationNames) {
@@ -320,13 +375,46 @@
       label.textContent = loc.name;
       label.style.left = pos.x + "%";
       label.style.top = pos.y + "%";
+      label.style.fontSize = (loc.fontSize || locFontSize) + "px";
 
       layer.parentElement.appendChild(label);
     });
   }
 
   // ==========================================
-  // SVG 地图占位图生成
+  // 站点/地名字号：每张地图可配置，默认值如下
+  // ==========================================
+  function getSiteFontSize(map) {
+    return (map && map.siteFontSize) || 10;
+  }
+  function getLocationFontSize(map) {
+    return (map && map.locationFontSize) || 10;
+  }
+
+  // 重新渲染 A/B 站点标签和地名标签（编辑器拖拽完后调用）
+  function reloadLocationLabels() {
+    renderLocationNames();
+  }
+
+  // ==========================================
+  // 站点覆盖层 SVG（仅首页卡片缩略图使用，详情页用 HTML label 渲染）
+  // ==========================================
+  function generateSiteOverlaySvg(map) {
+    if (!map.sites || map.sites.length === 0) return "";
+    const fontSize = getSiteFontSize(map);
+    let svg = `<svg class="site-overlay-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">`;
+    for (const site of map.sites) {
+      svg += `<text x="${site.x}" y="${site.y + 1.5}" text-anchor="middle"
+              fill="#ff4655" font-size="${fontSize}" font-weight="900"
+              font-family="Arial, Helvetica, sans-serif"
+              opacity="0.5" letter-spacing="0.5">${site.id}</text>`;
+    }
+    svg += `</svg>`;
+    return svg;
+  }
+
+  // ==========================================
+  // SVG 地图占位图生成（仅当无背景图时调用，会画网格/背景）
   // ==========================================
   function generateMapSvg(map, isPreview) {
     const sites = map.sites;
@@ -343,23 +431,14 @@
     </defs>`;
     svg += `<rect width="100" height="100" fill="url(#grid-${map.id})"/>`;
 
-    // 通道连线（据点之间）
-    for (let i = 0; i < sites.length - 1; i++) {
-      svg += `<line x1="${sites[i].x}" y1="${sites[i].y}" x2="${sites[i + 1].x}" y2="${sites[i + 1].y}"
-              stroke="#2a3a5a" stroke-width="2" stroke-dasharray="1.5,1" opacity="0.5"/>`;
-    }
-
-    // 据点区域
-    for (const site of sites) {
-      svg += `<rect x="${site.x - 10}" y="${site.y - 10}" width="20" height="20"
-              fill="#ff465515" stroke="#ff465540" stroke-width="0.5" rx="2"/>`;
-    }
-
     // 据点标签
-    for (const site of sites) {
-      svg += `<text x="${site.x}" y="${site.y + 1}" text-anchor="middle"
-              fill="#ff4655" font-size="7" font-weight="bold"
-              font-family="Arial, sans-serif">${site.id}</text>`;
+    if (sites && sites.length) {
+      for (const site of sites) {
+        svg += `<text x="${site.x}" y="${site.y + 1}" text-anchor="middle"
+                fill="#ff4655" font-size="7" font-weight="bold"
+                opacity="0.5"
+                font-family="Arial, sans-serif">${site.id}</text>`;
+      }
     }
 
     // 地图名称
@@ -387,9 +466,12 @@
     if (!layer) return;
     layer.innerHTML = "";
 
-    if (currentTab === "smokes") {
-      const filtered = currentMap.commonSmokes.filter(matchesSideFilter);
-      renderSmokeMarkers(layer, filtered, false);
+    if (currentTab === "smoke-attack") {
+      const arr = currentMap.attackSmokes || [];
+      renderSmokeMarkers(layer, arr.filter(matchesSideFilter), false);
+    } else if (currentTab === "smoke-defend") {
+      const arr = currentMap.defendSmokes || [];
+      renderSmokeMarkers(layer, arr.filter(matchesSideFilter), false);
     } else if (currentTab === "wallbangs") {
       const filtered = currentMap.wallbangs.filter(matchesSideFilter);
       renderWallbangMarkers(layer, filtered);
@@ -487,6 +569,7 @@
     marker.className = "marker agent-ability";
     marker.dataset.itemId = smoke.id;
     marker.dataset.lineupId = smoke.id;
+    marker.dataset.dragTarget = "ability";
 
     const abilityKey = smoke.ability || "E";
     const abilityColor = ABILITY_COLORS[abilityKey] || "#ff4655";
@@ -514,7 +597,14 @@
   function createStandMarker(smoke) {
     const marker = document.createElement("div");
     marker.className = "marker stand-position";
+    marker.dataset.itemId = smoke.id;
     marker.dataset.lineupId = smoke.id;
+    marker.dataset.dragTarget = "stand";
+
+    const abilityKey = smoke.ability || "E";
+    const abilityColor = ABILITY_COLORS[abilityKey] || "#ff4655";
+    marker.style.setProperty("--ability-color", abilityColor);
+
     const pos = getMapPos({ x: smoke.standX, y: smoke.standY });
     marker.style.left = pos.x + "%";
     marker.style.top = pos.y + "%";
@@ -527,6 +617,10 @@
     const line = document.createElement("div");
     line.className = "stand-line";
     line.dataset.lineupId = smoke.id;
+
+    const abilityKey = smoke.ability || "E";
+    const abilityColor = ABILITY_COLORS[abilityKey] || "#ff4655";
+    line.style.setProperty("--ability-color", abilityColor);
 
     const landPos = getMapPos(smoke);
     const standPos = getMapPos({ x: smoke.standX, y: smoke.standY });
@@ -619,9 +713,6 @@
       ? lineups
       : lineups.filter((l) => l.ability === currentAbilityFilter);
 
-    // 根据攻防标签过滤
-    filteredLineups = filteredLineups.filter(matchesSideFilter);
-
     if (filteredLineups.length === 0) {
       return;
     }
@@ -640,8 +731,10 @@
     const sidebar = document.getElementById("sidebar");
     if (!sidebar) return;
 
-    if (currentTab === "smokes") {
-      sidebar.innerHTML = renderSmokeSidebar();
+    if (currentTab === "smoke-attack") {
+      sidebar.innerHTML = renderSmokeSidebar("attack");
+    } else if (currentTab === "smoke-defend") {
+      sidebar.innerHTML = renderSmokeSidebar("defend");
     } else if (currentTab === "wallbangs") {
       sidebar.innerHTML = renderWallbangSidebar();
     } else if (currentTab === "plants") {
@@ -654,14 +747,17 @@
     bindSidebarEvents();
   }
 
-  function renderSmokeSidebar() {
-    const smokes = currentMap.commonSmokes.filter(matchesSideFilter);
+  function renderSmokeSidebar(side) {
+    const smokes = side === "attack"
+      ? (currentMap.attackSmokes || [])
+      : (currentMap.defendSmokes || []);
+    const title = side === "attack" ? "进攻烟位" : "防守烟位";
     if (smokes.length === 0) {
-      return `<div class="empty-state">暂无烟位数据<div class="hint">在 data.js 中添加 commonSmokes</div></div>`;
+      return `<div class="empty-state">暂无${title}数据<div class="hint">在编辑模式中添加或导入</div></div>`;
     }
 
     return `
-      <div class="sidebar-title">常规烟位 (${smokes.length})</div>
+      <div class="sidebar-title">${title} (${smokes.length})</div>
       <div class="info-list">
         ${smokes.map((s) => renderInfoItem(s, getTypeLabel(s.type))).join("")}
       </div>
@@ -808,7 +904,6 @@
           ${abilityFilterHtml}
           <div class="info-list">
             ${(currentAbilityFilter === "all" ? lineups : currentAbilityFilter === "none" ? [] : lineups.filter((l) => l.ability === currentAbilityFilter))
-              .filter(matchesSideFilter)
               .map((l) => renderInfoItem(l, getTypeLabel(l.type), l.ability)).join("")}
           </div>
         `;
@@ -917,7 +1012,7 @@
 
     let items = [];
 
-    if (currentTab === "smokes") {
+    if (currentTab === "smoke-attack" || currentTab === "smoke-defend") {
       items = [
         { cls: "ball", label: "球烟（圆形范围）" },
         { cls: "line", label: "线烟（线性范围）" }
@@ -1096,8 +1191,10 @@
 
   // 根据ID查找数据项
   function findItemById(itemId) {
-    if (currentTab === "smokes") {
-      return currentMap.commonSmokes.find((s) => s.id === itemId);
+    if (currentTab === "smoke-attack") {
+      return (currentMap.attackSmokes || []).find((s) => s.id === itemId);
+    } else if (currentTab === "smoke-defend") {
+      return (currentMap.defendSmokes || []).find((s) => s.id === itemId);
     } else if (currentTab === "wallbangs") {
       return currentMap.wallbangs.find((w) => w.id === itemId);
     } else if (currentTab === "plants") {
@@ -1176,7 +1273,9 @@
         </div>
       ` : ""}
 
-      ${renderDetailImageSection("效果图", smoke.effectImg)}
+      ${renderDetailImageSection("站位图", smoke.standImg, smoke.standDesc)}
+      ${renderDetailImageSection("瞄点图", smoke.aimImg, smoke.aimDesc)}
+      ${renderDetailImageSection("效果图", smoke.effectImg, smoke.effectDesc)}
     `;
   }
 
@@ -1197,7 +1296,9 @@
         <div class="detail-value">X: ${wb.x}%, Y: ${wb.y}%</div>
       </div>
 
-      ${renderDetailImageSection("效果图", wb.effectImg)}
+      ${renderDetailImageSection("站位图", wb.standImg, wb.standDesc)}
+      ${renderDetailImageSection("瞄点图", wb.aimImg, wb.aimDesc)}
+      ${renderDetailImageSection("效果图", wb.effectImg, wb.effectDesc)}
     `;
   }
 
@@ -1243,8 +1344,9 @@
         </div>
       ` : ""}
 
-      ${renderDetailImageSection("站位图", ps.standImg)}
-      ${renderDetailImageSection("效果图", ps.effectImg)}
+      ${renderDetailImageSection("站位图", ps.standImg, ps.standDesc)}
+      ${renderDetailImageSection("瞄点图", ps.aimImg, ps.aimDesc)}
+      ${renderDetailImageSection("效果图", ps.effectImg, ps.effectDesc)}
     `;
   }
 
@@ -1309,9 +1411,9 @@
         </div>
       ` : ""}
 
-      ${renderDetailImageSection("站位图", lineup.standImg)}
-      ${renderDetailImageSection("瞄点图", lineup.aimImg)}
-      ${renderDetailImageSection("效果图", lineup.effectImg)}
+      ${renderDetailImageSection("站位图", lineup.standImg, lineup.standDesc)}
+      ${renderDetailImageSection("瞄点图", lineup.aimImg, lineup.aimDesc)}
+      ${renderDetailImageSection("效果图", lineup.effectImg, lineup.effectDesc)}
 
       ${lineup.video ? `
         <div class="detail-video">
@@ -1321,15 +1423,21 @@
     `;
   }
 
-  // 渲染详情图片区块
-  function renderDetailImageSection(label, imgPath) {
-    if (!imgPath) return "";
+  // 渲染详情图片区块（始终显示，无图时显示占位符；desc 为图片上方说明文字）
+  function renderDetailImageSection(label, imgPath, desc) {
+    const descHtml = desc
+      ? `<div class="detail-image-desc">${desc}</div>`
+      : "";
+    const imgHtml = imgPath
+      ? `<img src="${imgPath}" alt="${label}" class="detail-image"
+               onerror="this.parentElement.innerHTML='<div class=\\'detail-image-placeholder\\'>图片未找到: ${imgPath}</div>'">`
+      : `<div class="detail-image-placeholder">暂无图片，可在数据中添加 ${label}</div>`;
     return `
-      <div class="detail-section">
+      <div class="detail-section detail-image-section">
         <div class="detail-label">${label}</div>
+        ${descHtml}
         <div class="detail-image-wrapper">
-          <img src="${imgPath}" alt="${label}" class="detail-image" 
-               onerror="this.parentElement.innerHTML='<div class=\\'detail-image-placeholder\\'>图片未找到: ${imgPath}</div>'">
+          ${imgHtml}
         </div>
       </div>
     `;
@@ -1441,7 +1549,41 @@
     renderSidebar: () => renderSidebar(),
     getData: () => ({ MAPS, AGENTS, LINEUPS, ROLES }),
     showDetail: (item, type) => showDetail(item, type),
-    ABILITY_COLORS: ABILITY_COLORS
+    ABILITY_COLORS: ABILITY_COLORS,
+    reloadLabels: reloadLocationLabels,
+    isAttackView: () => !!isAttackView,
+    getLabelObject: (kind, idx) => {
+      if (!currentMap) return null;
+      if (kind === "site") return (currentMap.sites && currentMap.sites[idx]) || null;
+      if (kind === "location") {
+        if (!currentMap.locations) currentMap.locations = [];
+        return currentMap.locations[idx] || null;
+      }
+      return null;
+    },
+    addLocationLabel: (kind, obj) => {
+      if (!currentMap) return -1;
+      if (kind === "location") {
+        if (!currentMap.locations) currentMap.locations = [];
+        currentMap.locations.push(obj);
+        return currentMap.locations.length - 1;
+      }
+      if (kind === "site") {
+        if (!currentMap.sites) currentMap.sites = [];
+        currentMap.sites.push(obj);
+        return currentMap.sites.length - 1;
+      }
+      return -1;
+    },
+    removeLocationLabel: (kind, idx) => {
+      if (!currentMap) return;
+      if (kind === "location" && currentMap.locations) {
+        currentMap.locations.splice(idx, 1);
+      }
+      if (kind === "site" && currentMap.sites) {
+        currentMap.sites.splice(idx, 1);
+      }
+    }
   };
 
   // 编辑器数据更新后重新渲染（仅在编辑器未激活时完整重渲染）

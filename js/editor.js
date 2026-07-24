@@ -18,6 +18,35 @@
   // 获取应用接口
   function app() { return window.__APP__; }
 
+  // 判断是否处于进攻视图（180°翻转开）—— 从 app.js 的暴露函数读取
+  function isAttackViewOn() {
+    return !!(window.__APP__ && window.__APP__.isAttackView && window.__APP__.isAttackView());
+  }
+
+  // 屏幕 VIEW 坐标 → 存储 DATA 坐标
+  //   进攻视图时：data.x = 100 - view.x, data.y = 100 - view.y
+  function viewToData(x, y) {
+    if (isAttackViewOn()) {
+      return {
+        x: Math.round(Math.max(0, Math.min(100, 100 - x)) * 10) / 10,
+        y: Math.round(Math.max(0, Math.min(100, 100 - y)) * 10) / 10
+      };
+    }
+    return {
+      x: Math.round(Math.max(0, Math.min(100, x)) * 10) / 10,
+      y: Math.round(Math.max(0, Math.min(100, y)) * 10) / 10
+    };
+  }
+
+  // DATA 坐标 → VIEW 坐标（用于读取数据项的当前显示位置）
+  function dataToView(item) {
+    if (!item) return { x: 0, y: 0 };
+    if (isAttackViewOn()) {
+      return { x: 100 - (item.x || 0), y: 100 - (item.y || 0) };
+    }
+    return { x: item.x || 0, y: item.y || 0 };
+  }
+
   // ==========================================
   // 编辑模式开关
   // ==========================================
@@ -35,6 +64,7 @@
   function enter() {
     editMode = true;
     editTool = "select";
+    document.body.classList.add("editing-mode");
     showEditBanner();
     app().rerender();
     // rerender 会重建 DOM，toolbar 和画布事件需要在 DOM 重建后重新绑定
@@ -52,6 +82,7 @@
     lineDrawState = null;
     dragState = null;
     isDragging = false;
+    document.body.classList.remove("editing-mode");
     removeEditBanner();
     app().rerender();
   }
@@ -70,15 +101,44 @@
     banner.innerHTML = `
       <span class="edit-banner-icon">✎</span>
       <span>编辑模式已开启</span>
-      <span class="edit-banner-hint">点击地图添加点位，拖拽移动，点击点位编辑</span>
+      <span class="edit-banner-hint">A/B点/地名可拖拽，点击编辑；添加后请导出替换文件</span>
+      <button class="edit-banner-btn" id="edit-map-settings-btn">◈ 地图设置</button>
       <button class="edit-banner-btn" id="edit-export-btn">导出JSON</button>
+      <button class="edit-banner-btn" id="edit-export-file-btn">⬇ 导出map_xxx.js</button>
       <button class="edit-banner-btn" id="edit-import-btn">导入JSON</button>
+      <button class="edit-banner-btn warning" id="edit-clear-draft-btn">🗑 清除草稿</button>
       <button class="edit-banner-btn danger" id="edit-exit-btn">退出编辑</button>
     `;
     banner.style.display = "flex";
 
     document.getElementById("edit-export-btn").addEventListener("click", exportJSON);
+    document.getElementById("edit-export-file-btn").addEventListener("click", exportMapFile);
+    document.getElementById("edit-map-settings-btn").addEventListener("click", showMapSettingsPanel);
     document.getElementById("edit-import-btn").addEventListener("click", importJSON);
+    document.getElementById("edit-clear-draft-btn").addEventListener("click", () => {
+      const cur = app().getMap();
+      const curName = cur ? (cur.name + " (当前)") : "";
+      const all = Object.keys(localStorage).filter(k => k.startsWith("valorant_edit_draft_"));
+      const total = all.length;
+      if (total === 0) {
+        alert("当前没有任何草稿，无需清理。");
+        return;
+      }
+      const mapList = all.map(k => k.replace("valorant_edit_draft_", "")).join("、");
+      const choice = confirm(
+        "检测到 " + total + " 张地图存在本地草稿：\n" + mapList +
+        "\n\n点击【确定】→ 清除【全部】草稿（推荐，可立即用代码里的最新数据）\n" +
+        "点击【取消】→ 只清除当前地图" + (curName ? "（" + curName + "）" : "") + "的草稿"
+      );
+      let cleared = 0;
+      if (choice) {
+        all.forEach(k => { localStorage.removeItem(k); cleared++; });
+        alert("已清除全部 " + cleared + " 张地图草稿。\n刷新页面后将使用代码里的最新数据。");
+      } else if (cur) {
+        clearDraft(cur.id);
+        alert("已清除当前地图草稿：" + cur.name);
+      }
+    });
     document.getElementById("edit-exit-btn").addEventListener("click", () => {
       if (confirm("退出编辑模式？未导出的修改将丢失（已自动保存到本地草稿）。")) {
         exit();
@@ -107,6 +167,8 @@
 
     const tools = [
       { id: "select", label: "选择/移动", icon: "✥" },
+      { id: "add-site", label: "加A/B点", icon: "Ⓐ" },
+      { id: "add-location", label: "加地名", icon: "🏷" },
       { id: "add-ball", label: "添加球烟", icon: "●" },
       { id: "add-line", label: "添加线烟", icon: "▬" },
       { id: "add-wallbang", label: "添加穿墙点", icon: "◆" },
@@ -171,13 +233,52 @@
     if (editTool === "add-line") return; // 线烟由 mousedown/mouseup 处理
     // 如果点击的是已有标记，不处理（让标记自己处理）
     if (e.target.closest(".marker")) return;
+    if (e.target.closest(".map-location-label")) return;
 
     const canvas = document.getElementById("map-canvas");
     const rect = canvas.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    let viewX = ((e.clientX - rect.left) / rect.width) * 100;
+    let viewY = ((e.clientY - rect.top) / rect.height) * 100;
 
-    addMarkerAt(editTool, x, y);
+    // 标签点位用 data 坐标存
+    const dataPos = viewToData(viewX, viewY);
+    const dataX = dataPos.x;
+    const dataY = dataPos.y;
+
+    if (editTool === "add-site") {
+      const nextId = prompt("请输入新据点ID（如 A / B / C）:", "C");
+      if (!nextId) return;
+      const idx = app().addLocationLabel("site", {
+        id: nextId.trim().toUpperCase(),
+        x: dataX,
+        y: dataY,
+        label: nextId.trim().toUpperCase() + "点"
+      });
+      if (idx >= 0) {
+        saveDraft();
+        app().reloadLabels && app().reloadLabels();
+      }
+      return;
+    }
+
+    if (editTool === "add-location") {
+      const name = prompt("请输入地名（如 A Long / Mid / B Short）:", "New Spot");
+      if (!name) return;
+      const idx = app().addLocationLabel("location", {
+        name: name.trim(),
+        x: dataX,
+        y: dataY,
+        type: "route"
+      });
+      if (idx >= 0) {
+        saveDraft();
+        app().reloadLabels && app().reloadLabels();
+      }
+      return;
+    }
+
+    // 烟位/穿墙/下包/技能：传 VIEW 坐标，addMarkerAt 内部统一处理
+    addMarkerAt(editTool, viewX, viewY);
   }
 
   function handleCanvasMouseDown(e) {
@@ -187,9 +288,13 @@
     if (editTool === "add-line") {
       const marker = e.target.closest(".marker");
       if (marker) return; // 如果点到了已有标记，不处理
+      const locLabel = e.target.closest(".map-location-label");
+      if (locLabel) return;
 
       const canvas = document.getElementById("map-canvas");
       const rect = canvas.getBoundingClientRect();
+      // 这里 startX/startY 保持 VIEW 空间（预览线就是在 VIEW 中画的），
+      // mouseup 创建数据时再整体转回 DATA 坐标
       const startX = ((e.clientX - rect.left) / rect.width) * 100;
       const startY = ((e.clientY - rect.top) / rect.height) * 100;
 
@@ -206,35 +311,87 @@
       return;
     }
 
-    // 选择/移动模式
+    // 选择/移动模式：先看站点/地名 label，再看 marker
     if (editTool !== "select") return;
+
+    const locLabel = e.target.closest(".map-location-label");
+    if (locLabel) {
+      const kind = locLabel.dataset.labelKind; // "site" or "location"
+      const idx = parseInt(locLabel.dataset.labelIndex, 10);
+      if (!kind || isNaN(idx)) return;
+
+      const canvas = document.getElementById("map-canvas");
+      const rect = canvas.getBoundingClientRect();
+      const obj = app().getLabelObject(kind, idx);
+      if (!obj) return;
+
+      // 记录 startView（显示坐标），拖动时在显示坐标空间里加减 delta，最后再转回 data 存储
+      const v0 = dataToView(obj);
+      dragState = {
+        itemId: `__label_${kind}_${idx}`,
+        startMouseX: e.clientX,
+        startMouseY: e.clientY,
+        canvasRect: rect,
+        labelKind: kind,
+        labelIndex: idx,
+        item: obj,
+        startViewX: v0.x,
+        startViewY: v0.y
+      };
+      isDragging = false;
+      editSelectedId = dragState.itemId;
+      return;
+    }
+
     const marker = e.target.closest(".marker");
     if (!marker) return;
 
     const itemId = marker.dataset.itemId;
     if (!itemId) return;
 
+    // 判断拖拽目标：stand=只移动起点，ability=只移动落点
+    const dragTarget = marker.dataset.dragTarget || "ability";
+
     editSelectedId = itemId;
     const canvas = document.getElementById("map-canvas");
     const rect = canvas.getBoundingClientRect();
+
+    const item = findItem(itemId);
+    if (!item) return;
+
+    var v0, sv0;
+    if (dragTarget === "stand" && item.standX !== undefined) {
+      // 拖拽起点：记录起点位置
+      sv0 = isAttackViewOn()
+        ? { x: 100 - item.standX, y: 100 - item.standY }
+        : { x: item.standX, y: item.standY };
+      v0 = dataToView(item); // 仍需记录落点位置以备不时之需
+    } else {
+      // 拖拽落点：记录落点位置
+      v0 = dataToView(item);
+      if (item.standX !== undefined) {
+        sv0 = isAttackViewOn()
+          ? { x: 100 - item.standX, y: 100 - item.standY }
+          : { x: item.standX, y: item.standY };
+      }
+    }
 
     dragState = {
       itemId: itemId,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       canvasRect: rect,
-      item: findItem(itemId)
+      item: item,
+      dragTarget: dragTarget,
+      startViewX: v0.x,
+      startViewY: v0.y
     };
 
-    if (dragState.item) {
-      dragState.startX = dragState.item.x;
-      dragState.startY = dragState.item.y;
-      if (dragState.item.standX !== undefined) {
-        dragState.startStandX = dragState.item.standX;
-        dragState.startStandY = dragState.item.standY;
-      }
-      isDragging = false;
+    if (sv0) {
+      dragState.startStandViewX = sv0.x;
+      dragState.startStandViewY = sv0.y;
     }
+    isDragging = false;
   }
 
   function handleEditorMouseMove(e) {
@@ -269,16 +426,29 @@
     }
 
     if (isDragging) {
-      dragState.item.x = Math.round(Math.max(0, Math.min(100, dragState.startX + dx)) * 10) / 10;
-      dragState.item.y = Math.round(Math.max(0, Math.min(100, dragState.startY + dy)) * 10) / 10;
-
-      // 如果有站位，同时移动站位（保持相对位置）
-      if (dragState.startStandX !== undefined) {
-        dragState.item.standX = Math.round(Math.max(0, Math.min(100, dragState.startStandX + dx)) * 10) / 10;
-        dragState.item.standY = Math.round(Math.max(0, Math.min(100, dragState.startStandY + dy)) * 10) / 10;
+      // 根据 dragTarget 决定移动哪个点
+      if (dragState.dragTarget === "stand" && dragState.startStandViewX !== undefined) {
+        // 只移动起点
+        const newStandViewX = dragState.startStandViewX + dx;
+        const newStandViewY = dragState.startStandViewY + dy;
+        const standData = viewToData(newStandViewX, newStandViewY);
+        dragState.item.standX = standData.x;
+        dragState.item.standY = standData.y;
+      } else {
+        // 只移动落点
+        const newViewX = dragState.startViewX + dx;
+        const newViewY = dragState.startViewY + dy;
+        const newData = viewToData(newViewX, newViewY);
+        dragState.item.x = newData.x;
+        dragState.item.y = newData.y;
       }
 
-      app().renderMarkers();
+      // label 拖拽实时刷新 label 位置显示
+      if (dragState.labelKind) {
+        app().reloadLabels && app().reloadLabels();
+      } else {
+        app().renderMarkers();
+      }
       updateEditPanelCoords();
     }
   }
@@ -286,7 +456,7 @@
   function handleEditorMouseUp(e) {
     // 线烟绘制完成
     if (lineDrawState) {
-      var startX = lineDrawState.startX;
+      var startX = lineDrawState.startX;  // VIEW 坐标
       var startY = lineDrawState.startY;
       var previewEl = lineDrawState.previewEl;
       var canvasRect = lineDrawState.canvasRect;
@@ -296,11 +466,11 @@
         previewEl.remove();
       }
 
-      var currentX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
-      var currentY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+      var currentViewX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+      var currentViewY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
 
-      var dx = currentX - startX;
-      var dy = currentY - startY;
+      var dx = currentViewX - startX;
+      var dy = currentViewY - startY;
       var length = Math.sqrt(dx * dx + dy * dy);
       var angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
@@ -308,20 +478,27 @@
 
       // 如果拖拽距离太小（< 2%），当做点击处理，创建默认线烟
       if (length < 2) {
-        addMarkerAt("add-line", startX, startY);
+        addMarkerAt("add-line", startX, startY);  // addMarkerAt 内部自己会 viewToData
       } else {
-        addLineSmokeAt(startX, startY, length, angle);
+        // 将 VIEW 空间的起点/长度/角度转换为 DATA 坐标
+        //   数据起点 = viewToData(startX, startY)
+        //   数据长度 = 视图长度 (保持长度不变)
+        //   数据角度：翻转 180° 时 x' = 100-x, y' = 100-y
+        //     → 向量 (dx, dy) 变成 (-dx, -dy)，即角度 + 180°
+        const dataStart = viewToData(startX, startY);
+        const dataAngle = isAttackViewOn() ? (angle + 180) % 360 : angle;
+        addLineSmokeAtData(dataStart.x, dataStart.y, length, dataAngle);
       }
       return;
     }
 
     // 原有的 mouseup 逻辑
-    if (!dragState) return;
+    var wasLabelDrag = dragState && dragState.labelKind;
+    var justDragged = isDragging;
+    var selectedDragId = dragState ? dragState.itemId : null;
 
     if (isDragging) {
-      // 拖拽完成，保存草稿。阻止 click 事件以避免弹出面板
       saveDraft();
-      // 临时阻止接下来的 click 事件
       var preventClick = function(ev) {
         ev.stopPropagation();
         ev.preventDefault();
@@ -332,6 +509,14 @@
 
     dragState = null;
     isDragging = false;
+
+    // 如果选中了 label 且没拖拽，当成点击弹出编辑面板
+    if (!justDragged && selectedDragId && selectedDragId.startsWith && selectedDragId.startsWith("__label_")) {
+      const [, kind, idxStr] = selectedDragId.split("__")[1].split("_");
+      const idx = parseInt(idxStr, 10);
+      // 延后触发，避免和 click 事件冲突
+      setTimeout(() => showLabelEditPanel(kind, idx), 30);
+    }
   }
 
   // ==========================================
@@ -342,8 +527,12 @@
     const tab = app().getTab();
     const agent = app().getAgent();
 
-    if (tab === "smokes") {
-      return { list: map.commonSmokes, type: "smoke" };
+    if (tab === "smoke-attack") {
+      if (!map.attackSmokes) map.attackSmokes = [];
+      return { list: map.attackSmokes, type: "smoke", side: "attack" };
+    } else if (tab === "smoke-defend") {
+      if (!map.defendSmokes) map.defendSmokes = [];
+      return { list: map.defendSmokes, type: "smoke", side: "defend" };
     } else if (tab === "wallbangs") {
       return { list: map.wallbangs, type: "wallbang" };
     } else if (tab === "plants") {
@@ -364,28 +553,35 @@
     return ctx.list.find(item => item.id === itemId);
   }
 
-  function addMarkerAt(tool, x, y) {
+  function addMarkerAt(tool, viewX, viewY) {
     const ctx = getCurrentList();
     if (!ctx) {
-      alert("请先选择一个标签页（常规烟位/穿墙点位/英雄技能）");
+      alert("请先选择一个标签页（进攻烟位/防守烟位/穿墙点位/英雄技能）");
       return;
     }
 
+    const dataPos = viewToData(viewX, viewY);
     const id = "edit_" + Date.now();
-    let newItem = { id, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+    let newItem = { id, x: dataPos.x, y: dataPos.y };
 
     if (tool === "add-ball") {
       newItem.type = "ball";
       newItem.name = "新球烟";
       newItem.desc = "";
-      if (ctx.type === "smoke") newItem.site = "";
+      if (ctx.type === "smoke") {
+        newItem.site = "";
+        if (!newItem.tags) newItem.tags = [ctx.side === "attack" ? "进攻方" : "防守方"];
+      }
     } else if (tool === "add-line") {
       newItem.type = "line";
       newItem.name = "新线烟";
       newItem.length = 20;
       newItem.angle = 0;
       newItem.desc = "";
-      if (ctx.type === "smoke") newItem.site = "";
+      if (ctx.type === "smoke") {
+        newItem.site = "";
+        if (!newItem.tags) newItem.tags = [ctx.side === "attack" ? "进攻方" : "防守方"];
+      }
     } else if (tool === "add-wallbang") {
       newItem.name = "新穿墙点";
       newItem.desc = "";
@@ -400,8 +596,12 @@
       newItem.ability = "E";
       newItem.desc = "";
       newItem.crosshair = "";
-      newItem.standX = Math.max(0, Math.min(100, x - 10));
-      newItem.standY = Math.max(0, Math.min(100, y + 10));
+      // 站位在 VIEW 空间相对 (viewX-10, viewY+10) 的位置 → 转回 DATA
+      const standViewX = Math.max(0, Math.min(100, viewX - 10));
+      const standViewY = Math.max(0, Math.min(100, viewY + 10));
+      const standData = viewToData(standViewX, standViewY);
+      newItem.standX = standData.x;
+      newItem.standY = standData.y;
     }
 
     ctx.list.push(newItem);
@@ -412,10 +612,11 @@
     setTimeout(() => showEditPanel(id), 200);
   }
 
-  function addLineSmokeAt(x, y, length, angle) {
+  // 传入 DATA 坐标（用于线烟绘制完成后创建，已经在外部做过坐标转换）
+  function addLineSmokeAtData(x, y, length, angle) {
     const ctx = getCurrentList();
     if (!ctx) {
-      alert("请先选择一个标签页（常规烟位/穿墙点位/英雄技能）");
+      alert("请先选择一个标签页（进攻烟位/防守烟位/穿墙点位/英雄技能）");
       return;
     }
 
@@ -430,7 +631,10 @@
       angle: Math.round(angle * 10) / 10,
       desc: ""
     };
-    if (ctx.type === "smoke") newItem.site = "";
+    if (ctx.type === "smoke") {
+      newItem.site = "";
+      if (!newItem.tags) newItem.tags = [ctx.side === "attack" ? "进攻方" : "防守方"];
+    }
 
     ctx.list.push(newItem);
     editSelectedId = id;
@@ -464,6 +668,350 @@
     }
     saveDraft();
     app().renderMarkers();
+  }
+
+  // ==========================================
+  // 标签编辑面板（站点 A/B / 地名）
+  // ==========================================
+  function showLabelEditPanel(kind, idx) {
+    const obj = app().getLabelObject(kind, idx);
+    if (!obj) return;
+
+    const overlay = document.getElementById("detail-overlay");
+    const panel = document.getElementById("detail-panel");
+    if (!overlay || !panel) return;
+
+    const isSite = kind === "site";
+    const title = isSite ? `编辑站点（${obj.id || ""}）` : `编辑地名（${obj.name || ""}）`;
+
+    let body = "";
+
+    // 站点字段：id, label, x, y
+    if (isSite) {
+      body += renderInputField("站点ID（A/B/C）", "id", obj.id || "", "text");
+      body += renderInputField("显示标签（如 A点）", "label", obj.label || "", "text");
+    } else {
+      body += renderInputField("地名文字", "name", obj.name || "", "text");
+      body += renderSelectField("类型", "type", obj.type || "route", [
+        { value: "route", label: "通道/通用" },
+        { value: "site", label: "据点相关" },
+        { value: "room", label: "房间" }
+      ]);
+    }
+
+    body += renderInputField("X坐标(%)", "x", obj.x, "number", "0", "100", "0.1");
+    body += renderInputField("Y坐标(%)", "y", obj.y, "number", "0", "100", "0.1");
+    body += renderRangeField("字号(px)", "fontSize", obj.fontSize || (isSite ? 10 : 10), 6, 24, 1);
+
+    panel.innerHTML = `
+      <button class="detail-close" onclick="document.getElementById('detail-overlay').classList.add('hidden')">&times;</button>
+      <div class="edit-panel-header">
+        <div class="detail-title">${title}</div>
+        <button class="edit-delete-btn" id="label-delete-btn">删除此${isSite ? "站点" : "地名"}</button>
+      </div>
+      <div class="edit-form" id="label-edit-form">
+        ${body}
+      </div>
+      <div class="edit-form-actions">
+        <button class="edit-save-btn" id="label-save-btn">保存修改</button>
+      </div>
+    `;
+
+    overlay.classList.remove("hidden");
+
+    // 绑定输入
+    panel.querySelectorAll("[data-field]").forEach(inp => {
+      const f = inp.dataset.field;
+      inp.addEventListener("input", () => {
+        let v = inp.value;
+        if (f === "x" || f === "y") {
+          v = parseFloat(v) || 0;
+        } else if (f === "fontSize") {
+          obj.fontSize = parseInt(v, 10) || (isSite ? 10 : 10);
+          saveDraft();
+          app().reloadLabels && app().reloadLabels();
+          return;
+        }
+        obj[f] = v;
+        saveDraft();
+        app().reloadLabels && app().reloadLabels();
+      });
+      inp.addEventListener("change", () => {
+        saveDraft();
+        app().reloadLabels && app().reloadLabels();
+      });
+    });
+
+    const saveBtn = document.getElementById("label-save-btn");
+    if (saveBtn) saveBtn.addEventListener("click", () => {
+      saveDraft();
+      app().reloadLabels && app().reloadLabels();
+      overlay.classList.add("hidden");
+    });
+
+    const delBtn = document.getElementById("label-delete-btn");
+    if (delBtn) delBtn.addEventListener("click", () => {
+      if (!confirm(`确定删除此${isSite ? "站点" : "地名"}？`)) return;
+      app().removeLocationLabel(kind, idx);
+      saveDraft();
+      app().reloadLabels && app().reloadLabels();
+      overlay.classList.add("hidden");
+    });
+  }
+
+  // ==========================================
+  // 地图设置面板（A/B字号 / 地名字号）
+  // ==========================================
+  function showMapSettingsPanel() {
+    const map = app().getMap();
+    const overlay = document.getElementById("detail-overlay");
+    const panel = document.getElementById("detail-panel");
+    if (!map || !overlay || !panel) return;
+
+    const siteFontSize = map.siteFontSize || 10;
+    const locFontSize = map.locationFontSize || 10;
+
+    panel.innerHTML = `
+      <button class="detail-close" onclick="document.getElementById('detail-overlay').classList.add('hidden')">&times;</button>
+      <div class="detail-title">地图设置：${map.name} (${map.id})</div>
+      <div class="edit-form">
+        ${renderRangeField("A/B 点字号 (px)", "siteFontSize", siteFontSize, 6, 30, 1)}
+        ${renderRangeField("地名字号 (px)", "locationFontSize", locFontSize, 6, 20, 1)}
+      </div>
+      <div style="color:#aaa;font-size:12px;margin-top:12px">
+        ⓘ 图片方向 = 显示方向 = 数据坐标方向。若地图方向不对，<b>请直接旋转图片文件</b>（不再通过代码旋转）。<br>
+        &nbsp;&nbsp;改完字号后，导出时会把这些字段也包含进 <code>_maps_meta.js</code> 的代码片段，直接复制覆盖即可。
+      </div>
+      <div class="edit-form-actions">
+        <button class="edit-save-btn" id="ms-save-btn">保存并重渲染</button>
+      </div>
+    `;
+    overlay.classList.remove("hidden");
+
+    panel.querySelectorAll("[data-field]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const f = inp.dataset.field;
+        map[f] = parseInt(inp.value, 10) || 10;
+        saveDraft();
+        app().reloadLabels && app().reloadLabels();
+      });
+    });
+
+    const saveBtn = document.getElementById("ms-save-btn");
+    if (saveBtn) saveBtn.addEventListener("click", () => {
+      saveDraft();
+      overlay.classList.add("hidden");
+      app().rerender();
+      setTimeout(() => {
+        addEditToolbar();
+        bindCanvasEvents();
+      }, 100);
+    });
+  }
+
+  // ==========================================
+  // 生成 maps/<mapId>/base.js 的完整文件内容
+  // （AB点sites / 字号 / 进攻烟+防守烟 / 穿墙 / 下包点 / 地名 = 所有非英雄数据）
+  // ==========================================
+  function buildMapBaseJsFileContent(mapId) {
+    const { MAPS } = app().getData();
+    const map = MAPS.find(m => m.id === mapId);
+    if (!map) return "";
+    const MAP_ID_UPPER = mapId.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+    const base = { mapId: mapId };
+    ["sites","siteFontSize","locationFontSize","attackSmokes","defendSmokes","wallbangs","plantSpots","locations"]
+      .forEach(k => { if (k in map) base[k] = map[k]; });
+    if (!("locations" in base)) base.locations = [];
+    if (!("attackSmokes" in base)) base.attackSmokes = [];
+    if (!("defendSmokes" in base)) base.defendSmokes = [];
+
+    return `// ==========================================
+// 地图基础数据（非英雄）：${map.name} (${mapId})
+// 包含：AB 点 sites + 字号 / 进攻烟 attackSmokes / 防守烟 defendSmokes / 穿墙点 wallbangs / 下包点 plantSpots / 地名 locations
+// 修改频率：中高
+// 生成时间：${new Date().toISOString()}
+// ==========================================
+
+if (!window.__VAL_DATA__) window.__VAL_DATA__ = {};
+
+window.__VAL_DATA__.MAP_DATA_${MAP_ID_UPPER}__BASE = ${JSON.stringify(base, null, 2)};
+`;
+  }
+
+  // ==========================================
+  // 生成 maps/<mapId>/agents/<agentId>.js 的完整文件内容
+  // （该英雄在这张地图上的所有技能点位）
+  // ==========================================
+  function buildMapAgentJsFileContent(mapId, agentId) {
+    const { LINEUPS, AGENTS } = app().getData();
+    const arr = (LINEUPS[mapId] && LINEUPS[mapId][agentId]) || [];
+    const agent = AGENTS.find(a => a.id === agentId);
+    const MAP_ID_UPPER = mapId.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+    const agentName = agent ? agent.name : agentId;
+
+    return `// ==========================================
+// ${agentName}（${agentId}）在本地图的所有技能点位
+// 所属地图：${mapId}
+// 修改频率：高
+// 生成时间：${new Date().toISOString()}
+// ==========================================
+
+if (!window.__VAL_DATA__) window.__VAL_DATA__ = {};
+if (!window.__VAL_DATA__.MAP_DATA_${MAP_ID_UPPER}__AGENTS) window.__VAL_DATA__.MAP_DATA_${MAP_ID_UPPER}__AGENTS = {};
+
+window.__VAL_DATA__.MAP_DATA_${MAP_ID_UPPER}__AGENTS['${agentId}'] = ${JSON.stringify(arr, null, 2)};
+`;
+  }
+
+  // 兼容旧函数别名（防止别的地方引用了 buildMapFileContent）
+  function buildMapFileContent(mapId) { return buildMapBaseJsFileContent(mapId); }
+
+  // ==========================================
+  // 导出面板（新结构：base.js + 当前选中英雄.js，或一键打包所有英雄）
+  // ==========================================
+  function exportMapFile() {
+    const map = app().getMap();
+    if (!map) return;
+
+    const { AGENTS } = app().getData();
+    const mapId = map.id;
+
+    const baseContent = buildMapBaseJsFileContent(mapId);
+    const currentAgentId = (window.__CURRENT_AGENT_SELECTED__ && window.__CURRENT_AGENT_SELECTED__[mapId]) || AGENTS[0].id;
+
+    const overlay = document.getElementById("detail-overlay");
+    const panel = document.getElementById("detail-panel");
+
+    const agentOpts = AGENTS.map(a =>
+      `<option value="${a.id}" ${a.id===currentAgentId?'selected':''}>${a.name} (${a.id})</option>`
+    ).join("");
+
+    panel.innerHTML = `
+      <button class="detail-close" onclick="document.getElementById('detail-overlay').classList.add('hidden')">&times;</button>
+      <div class="detail-title">导出并替换本地文件 — ${map.name} (${mapId})</div>
+      <div class="edit-export-info">
+        <div style="margin-bottom:8px;color:#ccc">
+          ✅ 按你选的新结构：<code>js/data/maps/${mapId}/</code> 目录下有 <b>1 个 base.js</b> + <b>25 个 agents/*.js</b>（每英雄一个文件）。<br>
+          ⓘ <b>日常高频修改 → agents/当前英雄.js</b>；<b>中低频修改 → base.js</b>（地名/AB点/进攻烟+防守烟）。
+        </div>
+        <div class="export-tabs">
+          <button class="export-tab-btn active" data-tab="base">① 导出 base.js（AB点 / 地名 / 攻/守烟 等）</button>
+          <button class="export-tab-btn" data-tab="agent">② 导出 当前英雄 的 agents/XXX.js</button>
+          <button class="export-tab-btn" data-tab="all">③ 一键下载本图 26 个文件（base.js + 25 英雄）</button>
+          <button class="export-tab-btn" data-tab="how">操作说明</button>
+        </div>
+
+        <div class="export-tab-content" id="export-tab-base">
+          <div class="export-snippet-info">
+            复制 → 全选覆盖 <code>js/data/maps/${mapId}/base.js</code> → 保存 → <b>Ctrl+Shift+R 强制刷新</b>
+          </div>
+          <textarea class="edit-export-textarea" id="export-ta-base" spellcheck="false">${baseContent.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button class="edit-save-btn" id="copy-base-btn">📋 复制 base.js 内容</button>
+            <button class="edit-save-btn" id="dl-base-btn">⬇ 下载 base.js</button>
+          </div>
+        </div>
+
+        <div class="export-tab-content hidden" id="export-tab-agent">
+          <div style="margin-bottom:10px">
+            <label style="margin-right:8px">选择要导出的英雄：</label>
+            <select id="export-agent-sel" style="padding:4px 8px">${agentOpts}</select>
+          </div>
+          <div class="export-snippet-info">
+            复制 → 全选覆盖 <code>js/data/maps/${mapId}/agents/<span id="export-agent-filename">${currentAgentId}.js</span></code> → 保存 → <b>Ctrl+Shift+R 强制刷新</b>
+          </div>
+          <textarea class="edit-export-textarea" id="export-ta-agent" spellcheck="false"></textarea>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button class="edit-save-btn" id="copy-agent-btn">📋 复制该英雄文件内容</button>
+            <button class="edit-save-btn" id="dl-agent-btn">⬇ 下载该英雄.js</button>
+          </div>
+        </div>
+
+        <div class="export-tab-content hidden" id="export-tab-all">
+          <div class="export-guide">
+            <h3>一键下载本图 26 个文件</h3>
+            <p>点击后浏览器会依次自动下载 <b>1 个 base.js</b> + <b>25 个 agents/*.js</b>，
+               下载完后把这 26 个文件按文件夹结构放进 <code>js/data/maps/${mapId}/</code> 和 <code>js/data/maps/${mapId}/agents/</code> 下覆盖即可。</p>
+            <p style="color:#aaa">注：浏览器安全限制无法直接下 ZIP（需外部库），这里用 26 次单个下载代替；如果嫌麻烦，只替换「①/② 单个文件」就够了（通常只改了这俩）。</p>
+            <button class="edit-save-btn" id="dl-all-btn" style="width:100%;font-size:16px;padding:12px">⬇ 一键下载本图 26 个文件（base.js + 25 英雄）</button>
+          </div>
+        </div>
+
+        <div class="export-tab-content hidden" id="export-tab-how">
+          <div class="export-guide">
+            <h3>永久保存你的修改（新结构版）</h3>
+            <ol>
+              <li><b>改了 A/B 点、地名、字号、进攻烟/防守烟/穿墙/下包点</b> → 切到「① 导出 base.js」，复制/下载，覆盖 <code>js/data/maps/${mapId}/base.js</code>。</li>
+              <li><b>改了某个英雄的技能点位</b> → 切到「② 导出 当前英雄.js」，选对英雄，复制/下载覆盖 <code>js/data/maps/${mapId}/agents/XXX.js</code>。</li>
+              <li>回到浏览器，<b>Ctrl+Shift+R 强制刷新</b>（必须！否则会用旧缓存的 agents/*.js）。</li>
+              <li>第一次用新结构别忘了<b>清草稿</b>：F12 → Console 执行：<code>Object.keys(localStorage).filter(k=>k.startsWith('valorant_edit_draft_')).forEach(k=>localStorage.removeItem(k))</code>。</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    `;
+    overlay.classList.remove("hidden");
+
+    panel.querySelectorAll(".export-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        panel.querySelectorAll(".export-tab-btn").forEach(b => b.classList.remove("active"));
+        panel.querySelectorAll(".export-tab-content").forEach(c => c.classList.add("hidden"));
+        btn.classList.add("active");
+        document.getElementById("export-tab-" + btn.dataset.tab).classList.remove("hidden");
+        if (btn.dataset.tab === "agent") renderAgentTextarea();
+      });
+    });
+
+    function renderAgentTextarea() {
+      const sel = document.getElementById("export-agent-sel");
+      if (!sel) return;
+      const aid = sel.value;
+      document.getElementById("export-ta-agent").value = buildMapAgentJsFileContent(mapId, aid);
+      document.getElementById("export-agent-filename").textContent = aid + ".js";
+    }
+    document.getElementById("export-agent-sel").addEventListener("change", renderAgentTextarea);
+    renderAgentTextarea();
+
+    const copyToClipboard = (text, btn) => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch(e){}
+      document.body.removeChild(ta);
+      const old = btn.textContent;
+      btn.textContent = "✅ 已复制！";
+      setTimeout(() => btn.textContent = old, 1500);
+    };
+    const dlTextAsFile = (text, filename) => {
+      const blob = new Blob([text], { type: "application/javascript;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    };
+
+    document.getElementById("copy-base-btn").addEventListener("click", e => copyToClipboard(baseContent, e.currentTarget));
+    document.getElementById("dl-base-btn").addEventListener("click", () => dlTextAsFile(baseContent, "base.js"));
+
+    document.getElementById("copy-agent-btn").addEventListener("click", e => {
+      const aid = document.getElementById("export-agent-sel").value;
+      copyToClipboard(buildMapAgentJsFileContent(mapId, aid), e.currentTarget);
+    });
+    document.getElementById("dl-agent-btn").addEventListener("click", () => {
+      const aid = document.getElementById("export-agent-sel").value;
+      dlTextAsFile(buildMapAgentJsFileContent(mapId, aid), aid + ".js");
+    });
+
+    document.getElementById("dl-all-btn").addEventListener("click", () => {
+      dlTextAsFile(baseContent, `maps_${mapId}__base.js`);
+      AGENTS.forEach((ag, i) => {
+        setTimeout(() => {
+          dlTextAsFile(buildMapAgentJsFileContent(mapId, ag.id), `maps_${mapId}__agents_${ag.id}.js`);
+        }, 180 * (i + 1));
+      });
+    });
   }
 
   // ==========================================
@@ -561,10 +1109,13 @@
     fieldsHtml += `</div>`;
 
     // 图片字段
-    fieldsHtml += `<div class="edit-section-title">图片路径（可选）</div>`;
-    fieldsHtml += renderInputField("站位图", "standImg", item.standImg || "", "text", "", "", "", "lineups/xxx_stand.jpg");
-    fieldsHtml += renderInputField("瞄点图", "aimImg", item.aimImg || "", "text", "", "", "", "lineups/xxx_aim.jpg");
-    fieldsHtml += renderInputField("效果图", "effectImg", item.effectImg || "", "text", "", "", "", "lineups/xxx_effect.jpg");
+    fieldsHtml += `<div class="edit-section-title">图片与说明（可选）</div>`;
+    fieldsHtml += renderInputField("站位图路径", "standImg", item.standImg || "", "text", "", "", "", "lineups/xxx_stand.jpg");
+    fieldsHtml += renderInputField("站位图说明", "standDesc", item.standDesc || "", "text", "", "", "", "站在角落，面向A点方向");
+    fieldsHtml += renderInputField("瞄点图路径", "aimImg", item.aimImg || "", "text", "", "", "", "lineups/xxx_aim.jpg");
+    fieldsHtml += renderInputField("瞄点图说明", "aimDesc", item.aimDesc || "", "text", "", "", "", "准星对准屋顶边缘");
+    fieldsHtml += renderInputField("效果图路径", "effectImg", item.effectImg || "", "text", "", "", "", "lineups/xxx_effect.jpg");
+    fieldsHtml += renderInputField("效果图说明", "effectDesc", item.effectDesc || "", "text", "", "", "", "封锁回防路线");
     fieldsHtml += renderInputField("视频链接", "video", item.video || "", "text", "", "", "", "https://...");
 
     panel.innerHTML = `
@@ -764,7 +1315,8 @@
       return copy;
     };
 
-    mapData.commonSmokes = (mapData.commonSmokes || []).map(cleanId);
+    mapData.attackSmokes = (mapData.attackSmokes || []).map(cleanId);
+    mapData.defendSmokes = (mapData.defendSmokes || []).map(cleanId);
     mapData.wallbangs = (mapData.wallbangs || []).map(cleanId);
     mapData.plantSpots = (mapData.plantSpots || []).map(cleanId);
     Object.keys(lineupData).forEach(agent => {
@@ -775,7 +1327,8 @@
       mapId: map.id,
       mapName: map.name,
       sites: mapData.sites,
-      commonSmokes: mapData.commonSmokes,
+      attackSmokes: mapData.attackSmokes,
+      defendSmokes: mapData.defendSmokes,
       wallbangs: mapData.wallbangs,
       plantSpots: mapData.plantSpots,
       lineups: lineupData
@@ -790,7 +1343,8 @@
     const overlay = document.getElementById("detail-overlay");
     const panel = document.getElementById("detail-panel");
 
-    const smokeCount = mapData.commonSmokes.length;
+    const atkCount = mapData.attackSmokes.length;
+    const defCount = mapData.defendSmokes.length;
     const wallbangCount = mapData.wallbangs.length;
     const plantCount = mapData.plantSpots.length;
     const agentCount = Object.keys(lineupData).length;
@@ -801,7 +1355,8 @@
       <div class="detail-title">导出数据 - ${map.name} (${map.id})</div>
       <div class="edit-export-info">
         <div class="export-stats">
-          <span class="export-stat">常规烟位: ${smokeCount}</span>
+          <span class="export-stat">进攻烟位: ${atkCount}</span>
+          <span class="export-stat">防守烟位: ${defCount}</span>
           <span class="export-stat">穿墙点位: ${wallbangCount}</span>
           <span class="export-stat">下包点位: ${plantCount}</span>
           <span class="export-stat">英雄技能: ${agentCount}英雄/${lineupCount}点位</span>
@@ -817,7 +1372,7 @@
         <div class="export-tab-content hidden" id="export-tab-snippet">
           <div class="export-snippet-info">
             将下方代码粘贴到 <code>js/data.js</code> 中对应位置：
-            <br>• MAPS 数组中找到 <code>id: "${map.id}"</code> 的地图，替换其 commonSmokes / wallbangs / plantSpots / sites
+            <br>• MAPS 数组中找到 <code>id: "${map.id}"</code> 的地图，替换其 attackSmokes / defendSmokes / wallbangs / plantSpots / sites
             <br>• LINEUPS 对象中找到 <code>${map.id}: {...}</code>，替换整段
           </div>
           <textarea class="edit-export-textarea" id="export-snippet-textarea" readonly>${dataJsSnippet}</textarea>
@@ -907,10 +1462,11 @@
     snippet += `// =========================================\n\n`;
 
     snippet += `// --- 粘贴到 MAPS 数组中 id: "${mapId}" 的地图对象内 ---\n`;
-    snippet += `// 替换该地图的 sites / commonSmokes / wallbangs / plantSpots 字段\n\n`;
+    snippet += `// 替换该地图的 sites / attackSmokes / defendSmokes / wallbangs / plantSpots 字段\n\n`;
 
     snippet += `sites: ${JSON.stringify(exportObj.sites, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
-    snippet += `commonSmokes: ${JSON.stringify(exportObj.commonSmokes, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+    snippet += `attackSmokes: ${JSON.stringify(exportObj.attackSmokes, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
+    snippet += `defendSmokes: ${JSON.stringify(exportObj.defendSmokes, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
     snippet += `wallbangs: ${JSON.stringify(exportObj.wallbangs, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
     snippet += `plantSpots: ${JSON.stringify(exportObj.plantSpots, null, 2).replace(/^/gm, "  ").trim()},\n\n`;
 
@@ -934,7 +1490,13 @@
           const map = app().getMap();
           const lineups = app().getLineups();
 
-          if (data.commonSmokes) map.commonSmokes = data.commonSmokes;
+          if (data.attackSmokes) map.attackSmokes = data.attackSmokes;
+          if (data.defendSmokes) map.defendSmokes = data.defendSmokes;
+          // 兼容旧数据：commonSmokes 拆成两份
+          if (data.commonSmokes && !data.attackSmokes && !data.defendSmokes) {
+            map.attackSmokes = data.commonSmokes.filter(s => (s.tags || []).includes("进攻方"));
+            map.defendSmokes = data.commonSmokes.filter(s => (s.tags || []).includes("防守方"));
+          }
           if (data.wallbangs) map.wallbangs = data.wallbangs;
           if (data.plantSpots) map.plantSpots = data.plantSpots;
           if (data.sites) map.sites = data.sites;
@@ -1001,9 +1563,22 @@
 
     const { MAPS, LINEUPS } = app().getData();
     const mapIdx = MAPS.findIndex(m => m.id === mapId);
-    if (mapIdx >= 0) {
-      MAPS[mapIdx] = draft.map;
+    if (mapIdx < 0) return false;
+
+    // 兼容性：草稿里可能残留已废弃字段（如 rotate180），合并前删掉
+    if (draft.map && typeof draft.map === 'object') {
+      delete draft.map.rotate180;
+      // 同时过滤 draft.map.sites 每个元素里的 opacity/fontSize 等未来字段
+      // （目前不删，保持宽松；仅删除已知的已废弃字段）
     }
+
+    // 安全合并：仅保留当前数据源真正存在的 id（防止草稿 id 串台把 map 搞乱）
+    if (draft.map && draft.map.id !== mapId) {
+      console.warn('[草稿] 检测到草稿 map.id 与当前不匹配，拒绝合并。草稿 id:', draft.map.id, '当前 id:', mapId);
+      return false;
+    }
+
+    MAPS[mapIdx] = draft.map;
     LINEUPS[mapId] = draft.lineups;
     return true;
   }
