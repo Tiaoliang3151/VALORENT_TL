@@ -336,16 +336,18 @@ body {
 
 .map-card-preview {
   width: 100%;
-  aspect-ratio: 1717 / 1913;
+  aspect-ratio: 1 / 1;
   max-height: 220px;
   background: var(--bg-dark);
   position: relative;
   overflow: hidden;
 }
 
-.map-card-preview svg {
+.map-card-preview svg,
+.map-card-preview img.map-card-img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 .map-card-info {
@@ -549,7 +551,7 @@ body {
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
-  aspect-ratio: 1717 / 1913;
+  aspect-ratio: 1 / 1;
   min-height: 500px;
   position: relative;
   background: #0a1118;
@@ -573,6 +575,20 @@ body {
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* 旋转模式下的地图背景图 */
+.map-bg-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 0;
+}
+.map-bg-img.map-rotated {
+  transform: rotate(180deg);
 }
 
 /* 地图图片模式 */
@@ -602,16 +618,16 @@ body {
   backdrop-filter: blur(4px);
 }
 
-/* 攻防方向标签 - 防守方在上，进攻方在下（匹配实际地图方向） */
+/* 攻防方向标签 - 进攻方在上，防守方在下（统一标准） */
 .map-side-label.attackers {
-  bottom: 12px;
+  top: 12px;
   background: rgba(255, 70, 85, 0.2);
   color: #ff4655;
   border: 1px solid rgba(255, 70, 85, 0.4);
 }
 
 .map-side-label.defenders {
-  top: 12px;
+  bottom: 12px;
   background: rgba(0, 212, 170, 0.2);
   color: #00d4aa;
   border: 1px solid rgba(0, 212, 170, 0.4);
@@ -863,10 +879,10 @@ body {
   color: white;
 }
 
-/* 英雄技能标记 - 小尺寸，按技能键位颜色区分 */
+/* 英雄技能标记 - 按技能键位颜色区分 */
 .marker.agent-ability {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 2px solid var(--ability-color, #ff4655);
@@ -876,10 +892,11 @@ body {
   justify-content: center;
   transition: all 0.2s;
   z-index: 10;
+  box-shadow: 0 0 6px var(--ability-color, #ff4655);
 }
 
 .marker.agent-ability .ab-key {
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--ability-color, #ff4655);
   line-height: 1;
@@ -887,13 +904,13 @@ body {
 
 .marker.agent-ability:hover {
   transform: translate(-50%, -50%) scale(1.5);
-  box-shadow: 0 0 12px var(--ability-color, #ff4655);
+  box-shadow: 0 0 16px var(--ability-color, #ff4655);
   z-index: 20;
 }
 
 .marker.agent-ability.highlighted {
   transform: translate(-50%, -50%) scale(1.6);
-  box-shadow: 0 0 16px var(--ability-color, #ff4655);
+  box-shadow: 0 0 20px var(--ability-color, #ff4655);
   z-index: 20;
   animation: marker-pulse 1s ease-in-out infinite;
 }
@@ -916,8 +933,23 @@ body {
 }
 
 .marker.agent-ability:hover .ab-label,
-.marker.agent-ability.highlighted .ab-label {
+.marker.agent-ability.highlighted .ab-label,
+.marker.agent-ability.hover-highlight .ab-label {
   opacity: 1;
+}
+
+/* Lineup 组高亮联动 */
+.marker.agent-ability.hover-highlight {
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 0 12px var(--ability-color, #ff4655);
+  z-index: 20;
+}
+
+.stand-line.hover-highlight,
+.stand-line.highlighted {
+  opacity: 0.9;
+  border-top-style: solid;
+  box-shadow: 0 0 6px var(--stand-color);
 }
 
 /* 标记高亮动画 */
@@ -1107,11 +1139,24 @@ body {
 
 /* 站位标记 */
 .marker.stand-position {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   transform: translate(-50%, -50%);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   z-index: 5;
+}
+
+.marker.stand-position.hover-highlight::before,
+.marker.stand-position.highlighted::before {
+  border-color: #fff;
+  box-shadow: 0 0 8px var(--stand-color), 0 0 16px var(--stand-color);
+}
+
+.marker.stand-position.hover-highlight::after,
+.marker.stand-position.highlighted::after {
+  background: #fff;
+  box-shadow: 0 0 6px var(--stand-color);
 }
 
 .marker.stand-position::before {
@@ -1120,10 +1165,11 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--stand-color);
   border-radius: 50%;
+  box-shadow: 0 0 4px var(--stand-color);
 }
 
 .marker.stand-position::after {
@@ -1132,23 +1178,36 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: var(--stand-color);
   border-radius: 50%;
+  box-shadow: 0 0 4px var(--stand-color);
 }
 
 /* 站位连线 */
 .stand-line {
   position: absolute;
-  height: 1px;
-  background: var(--stand-color);
+  height: 8px;
+  margin-top: -4px;
+  background: transparent;
   transform-origin: left center;
   opacity: 0.4;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   z-index: 4;
   border-top: 1px dashed var(--stand-color);
-  background: none;
+}
+
+.stand-line::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--stand-color);
+  transform: translateY(-50%);
 }
 
 /* 侧边栏 */
@@ -1246,6 +1305,14 @@ body {
   font-size: 16px;
   font-weight: 700;
   color: var(--bg-dark);
+  overflow: hidden;
+}
+
+.agent-card .agent-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .agent-card .agent-name {
@@ -1293,7 +1360,8 @@ body {
   border-left-color: var(--text-bright);
 }
 
-.info-item.highlighted {
+.info-item.highlighted,
+.info-item.hover-highlight {
   background: var(--bg-hover);
   border-left-color: var(--accent);
   box-shadow: 0 0 10px var(--accent-dim);
@@ -1402,8 +1470,15 @@ body {
   font-size: 20px;
   font-weight: 700;
   color: var(--text-bright);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding-right: 40px;
+}
+
+.detail-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-style: italic;
 }
 
 .detail-badge {

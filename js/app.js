@@ -30,6 +30,18 @@
     X: "#00d4aa"  // 大招青
   };
 
+  // 地图坐标转换：默认所有地图旋转180度，使进攻方在上、防守方在下
+  function getMapPos(item) {
+    if (!currentMap || currentMap.rotate180 === false) {
+      return { x: item.x, y: item.y };
+    }
+    return { x: 100 - item.x, y: 100 - item.y };
+  }
+
+  function isMapRotated() {
+    return currentMap && currentMap.rotate180 !== false;
+  }
+
   // ==========================================
   // 路由
   // ==========================================
@@ -114,10 +126,14 @@
   }
 
   function renderMapCard(map) {
+    const thumbRotated = map.rotate180 !== false ? ' style="transform: rotate(180deg);"' : '';
+    const previewContent = map.image
+      ? `<img src="${map.image}" class="map-card-img" alt="${map.name}"${thumbRotated}>`
+      : generateMapSvg(map, true);
     return `
       <div class="map-card" data-map-id="${map.id}">
         <div class="map-card-preview">
-          ${generateMapSvg(map, true)}
+          ${previewContent}
         </div>
         <div class="map-card-info">
           <div class="map-card-name">${map.name}</div>
@@ -182,7 +198,7 @@
           ` : ""}
           <div class="map-canvas ${map.image ? "has-image" : ""}" id="map-canvas">
             <div class="map-zoom-container" id="map-zoom-container">
-              ${map.image ? "" : generateMapSvg(map, false)}
+              ${map.image ? `<img src="${map.image}" class="map-bg-img ${isMapRotated() ? 'map-rotated' : ''}" alt="${map.name}">` : generateMapSvg(map, false)}
               <div class="marker-layer" id="marker-layer"></div>
             </div>
             <div class="map-location-toggle" id="map-location-toggle">
@@ -204,12 +220,6 @@
     `;
 
     app.innerHTML = html;
-
-    // 如果有地图图片，设置缩放容器的背景
-    if (map.image) {
-      const zoomContainer = document.getElementById("map-zoom-container");
-      zoomContainer.style.backgroundImage = `url("${map.image}")`;
-    }
 
     // 绑定标签切换
     app.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -306,9 +316,10 @@
         label.classList.add("hidden");
       }
 
+      const pos = getMapPos(loc);
       label.textContent = loc.name;
-      label.style.left = loc.x + "%";
-      label.style.top = loc.y + "%";
+      label.style.left = pos.x + "%";
+      label.style.top = pos.y + "%";
 
       layer.parentElement.appendChild(label);
     });
@@ -423,8 +434,10 @@
     const marker = document.createElement("div");
     marker.className = "marker ball-smoke";
     marker.dataset.itemId = smoke.id;
-    marker.style.left = smoke.x + "%";
-    marker.style.top = smoke.y + "%";
+    if (isAgentLineup) marker.dataset.lineupId = smoke.id;
+    const pos = getMapPos(smoke);
+    marker.style.left = pos.x + "%";
+    marker.style.top = pos.y + "%";
 
     marker.innerHTML = `
       <div class="smoke-range"></div>
@@ -436,6 +449,10 @@
       e.stopPropagation();
       showDetail(smoke, isAgentLineup ? "lineup" : "smoke");
     });
+    if (isAgentLineup) {
+      marker.addEventListener("mouseenter", () => highlightLineupGroup(smoke.id, true));
+      marker.addEventListener("mouseleave", () => highlightLineupGroup(smoke.id, false));
+    }
 
     return marker;
   }
@@ -444,8 +461,10 @@
     const marker = document.createElement("div");
     marker.className = "marker line-smoke";
     marker.dataset.itemId = smoke.id;
-    marker.style.left = smoke.x + "%";
-    marker.style.top = smoke.y + "%";
+    if (isAgentLineup) marker.dataset.lineupId = smoke.id;
+    const pos = getMapPos(smoke);
+    marker.style.left = pos.x + "%";
+    marker.style.top = pos.y + "%";
     marker.style.width = (smoke.length || 20) + "%";
     marker.style.transform = `translateY(-50%) rotate(${smoke.angle || 0}deg)`;
 
@@ -455,6 +474,10 @@
       e.stopPropagation();
       showDetail(smoke, isAgentLineup ? "lineup" : "smoke");
     });
+    if (isAgentLineup) {
+      marker.addEventListener("mouseenter", () => highlightLineupGroup(smoke.id, true));
+      marker.addEventListener("mouseleave", () => highlightLineupGroup(smoke.id, false));
+    }
 
     return marker;
   }
@@ -463,23 +486,27 @@
     const marker = document.createElement("div");
     marker.className = "marker agent-ability";
     marker.dataset.itemId = smoke.id;
+    marker.dataset.lineupId = smoke.id;
 
     const abilityKey = smoke.ability || "E";
     const abilityColor = ABILITY_COLORS[abilityKey] || "#ff4655";
 
-    marker.style.left = smoke.x + "%";
-    marker.style.top = smoke.y + "%";
+    const pos = getMapPos(smoke);
+    marker.style.left = pos.x + "%";
+    marker.style.top = pos.y + "%";
     marker.style.setProperty("--ability-color", abilityColor);
 
     marker.innerHTML = `
       <span class="ab-key">${abilityKey}</span>
-      <div class="ab-label">${smoke.name}</div>
+      <div class="ab-label">${smoke.abilityName || smoke.name}</div>
     `;
 
     marker.addEventListener("click", (e) => {
       e.stopPropagation();
       showDetail(smoke, "lineup");
     });
+    marker.addEventListener("mouseenter", () => highlightLineupGroup(smoke.id, true));
+    marker.addEventListener("mouseleave", () => highlightLineupGroup(smoke.id, false));
 
     return marker;
   }
@@ -487,24 +514,35 @@
   function createStandMarker(smoke) {
     const marker = document.createElement("div");
     marker.className = "marker stand-position";
-    marker.style.left = smoke.standX + "%";
-    marker.style.top = smoke.standY + "%";
+    marker.dataset.lineupId = smoke.id;
+    const pos = getMapPos({ x: smoke.standX, y: smoke.standY });
+    marker.style.left = pos.x + "%";
+    marker.style.top = pos.y + "%";
+    marker.addEventListener("mouseenter", () => highlightLineupGroup(smoke.id, true));
+    marker.addEventListener("mouseleave", () => highlightLineupGroup(smoke.id, false));
     return marker;
   }
 
   function createStandLine(smoke) {
     const line = document.createElement("div");
     line.className = "stand-line";
+    line.dataset.lineupId = smoke.id;
 
-    const dx = smoke.x - smoke.standX;
-    const dy = smoke.y - smoke.standY;
+    const landPos = getMapPos(smoke);
+    const standPos = getMapPos({ x: smoke.standX, y: smoke.standY });
+    const dx = landPos.x - standPos.x;
+    const dy = landPos.y - standPos.y;
     const length = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-    line.style.left = smoke.standX + "%";
-    line.style.top = smoke.standY + "%";
+    line.style.left = standPos.x + "%";
+    line.style.top = standPos.y + "%";
     line.style.width = length + "%";
     line.style.transform = `rotate(${angle}deg)`;
+
+    // 添加鼠标事件，使连线也能触发高亮
+    line.addEventListener("mouseenter", () => highlightLineupGroup(smoke.id, true));
+    line.addEventListener("mouseleave", () => highlightLineupGroup(smoke.id, false));
 
     return line;
   }
@@ -515,8 +553,9 @@
       const marker = document.createElement("div");
       marker.className = "marker wallbang";
       marker.dataset.itemId = wb.id;
-      marker.style.left = wb.x + "%";
-      marker.style.top = wb.y + "%";
+      const pos = getMapPos(wb);
+      marker.style.left = pos.x + "%";
+      marker.style.top = pos.y + "%";
 
       marker.innerHTML = `<div class="wb-label">${wb.name}</div>`;
 
@@ -545,8 +584,9 @@
       marker.dataset.itemId = ps.id;
 
       const config = PLANT_TYPES[ps.plantType] || PLANT_TYPES.open;
-      marker.style.left = ps.x + "%";
-      marker.style.top = ps.y + "%";
+      const pos = getMapPos(ps);
+      marker.style.left = pos.x + "%";
+      marker.style.top = pos.y + "%";
       marker.style.setProperty("--plant-color", config.color);
 
       marker.innerHTML = `
@@ -710,7 +750,7 @@
                  data-agent-id="${agent.id}"
                  style="--role-color: ${roleColor}"
                  title="${agent.name} (${agent.enName})">
-              <div class="agent-icon">${agent.name.charAt(0)}</div>
+              <div class="agent-icon"><img src="assets/agents/${agent.id}.png?v=20260724" alt="${agent.name}" onerror="this.style.display='none';this.parentElement.textContent='${agent.name.charAt(0)}'"></div>
               <div class="agent-name">${agent.name}</div>
               <div class="agent-en">${agent.enName}</div>
             </div>
@@ -736,13 +776,23 @@
         const abilityFilterHtml = `
           <div class="ability-filter">
             <button class="ability-btn ${currentAbilityFilter === "all" ? "active" : ""}" data-ability="all">全部 (${lineups.length})</button>
-            ${Object.entries(abilityCounts).map(([key, count]) => `
+            ${Object.entries(abilityCounts).map(([key, count]) => {
+              // 查找该技能的中文名
+              let abName = key;
+              const sampleLineup = lineups.find(l => l.ability === key);
+              if (sampleLineup && sampleLineup.abilityName) {
+                abName = `${key} ${sampleLineup.abilityName}`;
+              } else if (agent) {
+                const ability = agent.abilities.find((ab) => ab.key === key);
+                if (ability) abName = `${key} ${ability.name}`;
+              }
+              return `
               <button class="ability-btn ${currentAbilityFilter === key ? "active" : ""}"
                       data-ability="${key}"
                       style="--ability-color: ${ABILITY_COLORS[key] || "#ff4655"}">
-                ${key} (${count})
+                ${abName} (${count})
               </button>
-            `).join("")}
+            `}).join("")}
             <button class="ability-btn ${currentAbilityFilter === "none" ? "active" : ""}" data-ability="none">隐藏</button>
           </div>
         `;
@@ -808,11 +858,17 @@
       return `<span class="info-item-tag ${tagClass}">${tag}</span>`;
     }).join("");
 
+    // 为 lineup 生成中文名称
+    let displayName = item.name;
+    if (currentAgent && abilityKey) {
+      displayName = getLineupTitle(item);
+    }
+
     return `
       <div class="info-item" data-item-id="${item.id}">
         <div class="info-item-name">
-          ${abilityKey ? `<span class="info-item-type ${typeClass}">${abilityKey}</span>` : `<span class="info-item-type ${typeClass}" ${badgeStyle}>${typeLabel}</span>`}
-          ${item.name}
+          ${abilityKey ? `<span class="info-item-type ${typeClass}">${getAgentAbilityName(abilityKey, item.abilityName)}</span>` : `<span class="info-item-type ${typeClass}" ${badgeStyle}>${typeLabel}</span>`}
+          ${displayName}
           ${tagsHtml ? `<span class="info-item-tags">${tagsHtml}</span>` : ""}
         </div>
         ${item.desc ? `<div class="info-item-desc">${item.desc}</div>` : ""}
@@ -828,6 +884,28 @@
       wallbang: "穿墙"
     };
     return labels[type] || type;
+  }
+
+  // 获取当前英雄技能的中文名称
+  // 优先使用 lineup 数据中的 abilityName（从原始数据转换）
+  function getAgentAbilityName(abilityKey, lineupAbilityName) {
+    if (lineupAbilityName) return `${abilityKey} ${lineupAbilityName}`;
+    if (!currentAgent || !abilityKey) return abilityKey;
+    const agent = AGENTS.find((a) => a.id === currentAgent);
+    if (!agent) return abilityKey;
+    const ability = agent.abilities.find((ab) => ab.key === abilityKey);
+    return ability ? `${ability.key} ${ability.name}` : abilityKey;
+  }
+
+  // 生成中文点位标题
+  function getLineupTitle(lineup) {
+    const agent = AGENTS.find((a) => a.id === currentAgent);
+    // 优先使用 lineup 数据中的 abilityName（从原始数据转换的中文名）
+    const abilityName = lineup.abilityName || 
+      (agent ? (agent.abilities.find((ab) => ab.key === lineup.ability)?.name || lineup.ability) : lineup.ability);
+    const side = (lineup.tags || []).includes("进攻方") ? " - 进攻" :
+                 (lineup.tags || []).includes("防守方") ? " - 防守" : "";
+    return `${agent ? agent.name + " " : ""}${abilityName}点位${side}`;
   }
 
   // ==========================================
@@ -959,6 +1037,23 @@
     });
   }
 
+  // 高亮/取消高亮同一组 lineup 的标记、站位和连线
+  function highlightLineupGroup(lineupId, active) {
+    // 高亮地图上的标记和连线
+    const markers = app.querySelectorAll(`[data-lineup-id="${lineupId}"]`);
+    markers.forEach((el) => {
+      if (active) el.classList.add("hover-highlight");
+      else el.classList.remove("hover-highlight");
+    });
+    
+    // 同时高亮侧边栏对应项
+    const sidebarItem = app.querySelector(`.info-item[data-item-id="${lineupId}"]`);
+    if (sidebarItem) {
+      if (active) sidebarItem.classList.add("hover-highlight");
+      else sidebarItem.classList.remove("hover-highlight");
+    }
+  }
+
   // 高亮标记并显示详情
   function highlightAndShowDetail(itemId) {
     // 高亮侧边栏项
@@ -974,9 +1069,19 @@
     app.querySelectorAll(".marker").forEach((m) => {
       m.classList.remove("highlighted");
     });
+    app.querySelectorAll(".stand-line").forEach((l) => {
+      l.classList.remove("highlighted");
+    });
     const marker = app.querySelector(`.marker[data-item-id="${itemId}"]`);
     if (marker) {
       marker.classList.add("highlighted");
+    }
+    // 同时高亮对应的站位和连线
+    if (currentTab === "agents") {
+      const standMarker = app.querySelector(`.marker.stand-position[data-lineup-id="${itemId}"]`);
+      const standLine = app.querySelector(`.stand-line[data-lineup-id="${itemId}"]`);
+      if (standMarker) standMarker.classList.add("highlighted");
+      if (standLine) standLine.classList.add("highlighted");
     }
 
     // 查找数据并显示详情
@@ -1148,9 +1253,11 @@
     const ability = agent ? agent.abilities.find((ab) => ab.key === lineup.ability) : null;
     const typeLabel = getTypeLabel(lineup.type);
     const roleColor = agent ? ROLES[agent.role].color : "#ff4655";
+    const chineseTitle = getLineupTitle(lineup);
 
     return `
-      <div class="detail-title">${lineup.name}</div>
+      <div class="detail-title">${chineseTitle}</div>
+      ${lineup.name && lineup.name !== chineseTitle ? `<div class="detail-subtitle">${lineup.name}</div>` : ""}
       <span class="detail-badge" style="background: ${roleColor}; color: white;">
         ${agent ? agent.name : ""} | ${lineup.ability}键 ${ability ? ability.name : ""}
       </span>
