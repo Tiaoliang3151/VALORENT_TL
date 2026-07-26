@@ -106,6 +106,10 @@
       <button class="edit-banner-btn" id="edit-export-btn">导出JSON</button>
       <button class="edit-banner-btn" id="edit-export-file-btn">⬇ 导出map_xxx.js</button>
       <button class="edit-banner-btn" id="edit-import-btn">导入JSON</button>
+      <span class="edit-banner-sep">|</span>
+      <button class="edit-banner-btn" id="edit-csv-template-btn" title="下载CSV模板（含格式说明和示例）">📋 CSV模板</button>
+      <button class="edit-banner-btn" id="edit-csv-export-btn" title="导出当前地图所有技能点位为CSV">⬇ 导出CSV</button>
+      <button class="edit-banner-btn" id="edit-csv-import-btn" title="从CSV批量导入/更新技能点位">📥 导入CSV</button>
       <button class="edit-banner-btn warning" id="edit-clear-draft-btn">🗑 清除草稿</button>
       <button class="edit-banner-btn danger" id="edit-exit-btn">退出编辑</button>
     `;
@@ -115,6 +119,9 @@
     document.getElementById("edit-export-file-btn").addEventListener("click", exportMapFile);
     document.getElementById("edit-map-settings-btn").addEventListener("click", showMapSettingsPanel);
     document.getElementById("edit-import-btn").addEventListener("click", importJSON);
+    document.getElementById("edit-csv-template-btn").addEventListener("click", exportCSVTemplate);
+    document.getElementById("edit-csv-export-btn").addEventListener("click", exportCSV);
+    document.getElementById("edit-csv-import-btn").addEventListener("click", showCSVImportPanel);
     document.getElementById("edit-clear-draft-btn").addEventListener("click", () => {
       const cur = app().getMap();
       const curName = cur ? (cur.name + " (当前)") : "";
@@ -1521,6 +1528,426 @@ window.__VAL_DATA__.MAP_DATA_${MAP_ID_UPPER}__AGENTS['${agentId}'] = ${JSON.stri
       reader.readAsText(file);
     });
     input.click();
+  }
+
+  // ==========================================
+  // CSV 批量导入导出
+  // ==========================================
+
+  var CSV_COLUMNS = [
+    "mapId", "agentId", "ability", "abilityName", "name", "type",
+    "x", "y", "standX", "standY",
+    "desc", "crosshair",
+    "standImg", "standDesc", "aimImg", "aimDesc", "effectImg", "effectDesc",
+    "video", "tags"
+  ];
+
+  // CSV 字段转义：含逗号/引号/换行时用双引号包裹，内部引号双写
+  function csvEscape(val) {
+    if (val === null || val === undefined) return "";
+    var s = String(val);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  // 解析 CSV 文本 → 二维数组（支持引号包裹、跨行字段）
+  function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // 去BOM
+    var rows = [], row = [], field = "", inQuotes = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i], next = text[i + 1];
+      if (inQuotes) {
+        if (ch === '"' && next === '"') { field += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { field += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { row.push(field); field = ""; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && next === '\n') i++;
+          if (field !== "" || row.length > 0) { row.push(field); rows.push(row); row = []; field = ""; }
+        } else { field += ch; }
+      }
+    }
+    if (field !== "" || row.length > 0) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  // 将 CSV 行数组 → lineup 对象
+  function csvRowToLineup(header, row, mapId) {
+    var obj = {};
+    for (var i = 0; i < header.length && i < row.length; i++) {
+      obj[header[i].trim()] = (row[i] || "").trim();
+    }
+    // tags 字符串 → 数组
+    var tags = [];
+    if (obj.tags) tags = obj.tags.split(";").map(function(t) { return t.trim(); }).filter(Boolean);
+
+    var agentId = obj.agentId || "";
+    var ability = (obj.ability || "").toUpperCase();
+
+    // 生成 id（如果 CSV 没有提供）
+    var id = obj.id;
+    if (!id) {
+      var tagStr = tags.length > 0 ? tags[0] : "other";
+      id = (obj.mapId || mapId) + "_" + agentId + "_" + ability + "_" + tagStr + "_" + Date.now().toString(36);
+    }
+
+    return {
+      id: id,
+      ability: ability,
+      abilityName: obj.abilityName || "",
+      name: obj.name || "",
+      type: obj.type || "other",
+      x: parseFloat(obj.x) || 0,
+      y: parseFloat(obj.y) || 0,
+      standX: parseFloat(obj.standX) || 0,
+      standY: parseFloat(obj.standY) || 0,
+      desc: obj.desc || "",
+      crosshair: obj.crosshair || "",
+      standImg: obj.standImg || "",
+      standDesc: obj.standDesc || "",
+      aimImg: obj.aimImg || "",
+      aimDesc: obj.aimDesc || "",
+      effectImg: obj.effectImg || "",
+      effectDesc: obj.effectDesc || "",
+      video: obj.video || "",
+      tags: tags
+    };
+  }
+
+  // ---- 导出 CSV 模板（含说明和示例）----
+  function exportCSVTemplate() {
+    var map = app().getMap();
+    var BOM = "\uFEFF";
+
+    var lines = [];
+    lines.push("# 无畏契约战术查询 - CSV技能点位数据模板");
+    lines.push("# 生成时间: " + new Date().toLocaleString("zh-CN"));
+    lines.push("# 当前地图: " + map.name + " (" + map.id + ")");
+    lines.push("#");
+    lines.push("# 使用方法:");
+    lines.push("#   1. 用 Excel / WPS / Google Sheets 打开此文件");
+    lines.push("#   2. 按行填写数据，每一行 = 一个技能点位");
+    lines.push("#   3. 保存为 CSV (UTF-8) 格式");
+    lines.push("#   4. 在编辑模式点击「导入CSV」上传此文件");
+    lines.push("#   5. 图片文件请手动放到 lineups/ 目录，CSV中填写路径即可");
+    lines.push("#");
+    lines.push("# 字段说明:");
+    lines.push("#   mapId        地图ID (如 " + map.id + ")");
+    lines.push("#   agentId      英雄ID (brimstone/jett/omen/viper/sage/cypher/reyna/raze/breach/sova/killjoy/phoenix)");
+    lines.push("#   ability      技能键位 (Q/E/C/X)");
+    lines.push("#   abilityName  技能名称 (如 燃烧榴弹)");
+    lines.push("#   name         技能点位名称");
+    lines.push("#   type         类型 (attack=进攻 defense=防守 other=其他)");
+    lines.push("#   x, y         技能落点坐标 (0-100 百分比)");
+    lines.push("#   standX, standY  站位坐标 (0-100 百分比)");
+    lines.push("#   desc         站位文字描述");
+    lines.push("#   crosshair    落点/准星文字描述");
+    lines.push("#   standImg     站位图路径 (如 lineups/haven_brim_Q0_stand.jpg，留空=不显示)");
+    lines.push("#   standDesc    站位图说明");
+    lines.push("#   aimImg       瞄点图路径");
+    lines.push("#   aimDesc      瞄点图说明");
+    lines.push("#   effectImg    效果图路径");
+    lines.push("#   effectDesc   效果图说明");
+    lines.push("#   video        视频链接 (YouTube/B站等)");
+    lines.push("#   tags         标签 (多个用分号分隔，如 进攻方;A点)");
+    lines.push("#");
+    lines.push("# 注意: 以 # 开头的行在导入时自动跳过，请勿删除表头行");
+
+    // 表头
+    lines.push(CSV_COLUMNS.join(","));
+
+    // 示例行 1 — 进攻
+    lines.push([
+      map.id, "brimstone", "Q", "燃烧榴弹", "示例-A点烟雾弹", "attack",
+      "85.5", "45.2", "62.3", "70.1",
+      "站在重生点右侧角落，背靠墙壁", "准星对准屋顶边缘左侧",
+      "lineups/haven_brim_Q0_stand.jpg", "站位图说明",
+      "lineups/haven_brim_Q0_aim.jpg", "瞄点图说明",
+      "", "效果图说明",
+      "https://www.youtube.com/watch?v=xxx", "进攻方;A点"
+    ].map(csvEscape).join(","));
+
+    // 示例行 2 — 防守
+    lines.push([
+      map.id, "viper", "E", "毒雾", "示例-B点防守烟", "defense",
+      "72.0", "48.5", "55.0", "60.0",
+      "B通入口右侧", "准星对准B包点上沿",
+      "", "", "", "", "", "",
+      "", "防守方;B点"
+    ].map(csvEscape).join(","));
+
+    var csv = BOM + lines.join("\n") + "\n";
+
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = map.id + "_csv_template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- 导出当前地图 CSV ----
+  function exportCSV() {
+    var map = app().getMap();
+    var lineups = app().getLineups();
+    var mapLineups = lineups[map.id] || {};
+
+    var BOM = "\uFEFF";
+    var rows = [];
+    rows.push(CSV_COLUMNS.join(","));
+
+    var agentCount = 0, itemCount = 0;
+
+    Object.keys(mapLineups).forEach(function(agentId) {
+      agentCount++;
+      (mapLineups[agentId] || []).forEach(function(item) {
+        itemCount++;
+        rows.push([
+          map.id, agentId,
+          item.ability || "", item.abilityName || "",
+          item.name || "", item.type || "",
+          item.x != null ? item.x : "", item.y != null ? item.y : "",
+          item.standX != null ? item.standX : "", item.standY != null ? item.standY : "",
+          item.desc || "", item.crosshair || "",
+          item.standImg || "", item.standDesc || "",
+          item.aimImg || "", item.aimDesc || "",
+          item.effectImg || "", item.effectDesc || "",
+          item.video || "",
+          (item.tags || []).join(";")
+        ].map(csvEscape).join(","));
+      });
+    });
+
+    if (itemCount === 0) {
+      alert("当前地图没有技能点位数据，请先使用「CSV模板」创建。");
+      return;
+    }
+
+    var csv = BOM + rows.join("\n") + "\n";
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = map.id + "_lineups.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+
+    alert("已导出 " + agentCount + " 个英雄、" + itemCount + " 个技能点位。");
+  }
+
+  // ---- 导入 CSV 说明面板 ----
+  function showCSVImportPanel() {
+    var map = app().getMap();
+    var overlay = document.getElementById("detail-overlay");
+    var panel = document.getElementById("detail-panel");
+
+    // 可选英雄列表
+    var agentList = ["brimstone", "jett", "omen", "viper", "sage", "cypher", "reyna", "raze", "breach", "sova", "killjoy", "phoenix"];
+
+    panel.innerHTML = [
+      '<button class="detail-close" onclick="document.getElementById(\'detail-overlay\').classList.add(\'hidden\')">&times;</button>',
+      '<div class="detail-title">导入 CSV — ' + map.name + ' (' + map.id + ')</div>',
+      '<div style="padding: 16px; max-height: 72vh; overflow-y: auto; font-size: 13px; line-height: 1.6;">',
+
+      // ---- 格式说明 ----
+      '<h3 style="color:#ff4655; margin:0 0 8px;">格式说明</h3>',
+      '<p style="color:#aaa; margin:0 0 10px;">CSV 文件需包含以下列（表头行必须与此一致，顺序不限）：</p>',
+      '<div style="background:#1a1a2e; border:1px solid #333; border-radius:6px; padding:10px 12px; font-family:monospace; font-size:11px; color:#8be9fd; margin-bottom:14px; overflow-x:auto; white-space:nowrap;">',
+      CSV_COLUMNS.join(", "),
+      '</div>',
+
+      // ---- 字段说明表 ----
+      '<h3 style="color:#ff4655; margin:0 0 8px;">字段说明</h3>',
+      '<table style="width:100%; border-collapse:collapse; margin-bottom:14px; font-size:12px;">',
+      '<tr style="background:#1a1a2e;">',
+      '<th style="padding:5px 8px; text-align:left; border:1px solid #333; color:#ff4655;">字段</th>',
+      '<th style="padding:5px 8px; text-align:left; border:1px solid #333; color:#ff4655;">说明</th>',
+      '<th style="padding:5px 8px; text-align:left; border:1px solid #333; color:#ff4655;">示例</th>',
+      '</tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">mapId</td><td style="padding:4px 8px; border:1px solid #333;">地图ID</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">' + map.id + '</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">agentId</td><td style="padding:4px 8px; border:1px solid #333;">英雄ID（小写英文）</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">brimstone</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">ability</td><td style="padding:4px 8px; border:1px solid #333;">技能键位 Q / E / C / X</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">Q</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">abilityName</td><td style="padding:4px 8px; border:1px solid #333;">技能中文名称</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">燃烧榴弹</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">name</td><td style="padding:4px 8px; border:1px solid #333;">点位名称</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">A点烟雾弹</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">type</td><td style="padding:4px 8px; border:1px solid #333;">类型：attack / defense / other</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">attack</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">x, y</td><td style="padding:4px 8px; border:1px solid #333;">落点坐标 (0-100)</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">85.5, 45.2</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">standX, standY</td><td style="padding:4px 8px; border:1px solid #333;">站位坐标 (0-100)</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">62.3, 70.1</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">desc</td><td style="padding:4px 8px; border:1px solid #333;">站位文字描述</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">站在重生点右侧</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">crosshair</td><td style="padding:4px 8px; border:1px solid #333;">落点/准星描述</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">准星对准屋顶</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">standImg</td><td style="padding:4px 8px; border:1px solid #333;">站位图路径（可留空）</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">lineups/xxx.jpg</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">standDesc</td><td style="padding:4px 8px; border:1px solid #333;">站位图说明</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">背靠墙壁</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">aimImg / aimDesc</td><td style="padding:4px 8px; border:1px solid #333;">瞄点图路径 / 说明</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">同上</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">effectImg / effectDesc</td><td style="padding:4px 8px; border:1px solid #333;">效果图路径 / 说明</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">同上</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">video</td><td style="padding:4px 8px; border:1px solid #333;">视频链接</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">https://...</td></tr>',
+      '<tr><td style="padding:4px 8px; border:1px solid #333; color:#8be9fd;">tags</td><td style="padding:4px 8px; border:1px solid #333;">标签（分号分隔）</td><td style="padding:4px 8px; border:1px solid #333; color:#888;">进攻方;A点</td></tr>',
+      '</table>',
+
+      // ---- 示例 ----
+      '<h3 style="color:#ff4655; margin:0 0 8px;">示例数据</h3>',
+      '<div style="background:#1a1a2e; border:1px solid #333; border-radius:6px; padding:10px 12px; font-family:monospace; font-size:11px; color:#8be9fd; margin-bottom:6px; overflow-x:auto; white-space:nowrap;">',
+      CSV_COLUMNS.join(","),
+      '</div>',
+      '<div style="background:#1a1a2e; border:1px solid #333; border-radius:6px; padding:10px 12px; font-family:monospace; font-size:11px; color:#50fa7b; margin-bottom:14px; overflow-x:auto; white-space:nowrap;">',
+      [map.id, "brimstone", "Q", "燃烧榴弹", "A点烟雾弹", "attack", "85.5", "45.2", "62.3", "70.1", "站在重生点右侧", "准星对准屋顶边缘", "lineups/xxx_stand.jpg", "站位说明", "lineups/xxx_aim.jpg", "瞄点说明", "", "效果说明", "https://youtu.be/xxx", "进攻方;A点"].map(csvEscape).join(","),
+      '</div>',
+
+      // ---- 注意事项 ----
+      '<div style="background:#1e1e30; border-left:3px solid #ffcc00; padding:10px 14px; margin-bottom:16px; border-radius:0 4px 4px 0;">',
+      '<b style="color:#ffcc00;">注意事项</b><br>',
+      '<span style="color:#ccc;">• <b>#</b> 开头的行自动跳过（注释行）<br>',
+      '• 坐标范围 0-100，表示地图宽高的百分比<br>',
+      '• 图片需手动放到 <code style="color:#8be9fd;">lineups/</code> 目录，CSV 中只填路径<br>',
+      '• Excel 保存时选择 <b>CSV UTF-8</b> 格式，否则中文可能乱码<br>',
+      '• 可用英雄ID：' + agentList.join(", ") + '</span>',
+      '</div>',
+
+      // ---- 导入模式选择 ----
+      '<h3 style="color:#ff4655; margin:0 0 8px;">选择导入模式</h3>',
+      '<div style="margin-bottom:16px;">',
+      '<label style="display:block; margin-bottom:6px; cursor:pointer;"><input type="radio" name="csv-mode" value="merge" checked style="margin-right:6px;">',
+      '<b style="color:#50fa7b;">按ID合并（推荐）</b> — CSV中有相同ID的点位会被更新，新点位追加</label>',
+      '<label style="display:block; margin-bottom:6px; cursor:pointer;"><input type="radio" name="csv-mode" value="append" style="margin-right:6px;">',
+      '<b style="color:#8be9fd;">追加</b> — 保留现有全部数据，CSV中所有行作为新点位添加</label>',
+      '<label style="display:block; cursor:pointer;"><input type="radio" name="csv-mode" value="overwrite" style="margin-right:6px;">',
+      '<b style="color:#ff5555;">覆盖</b> — 清空当前地图所有技能点位，用CSV完全替换</label>',
+      '</div>',
+
+      // ---- 上传按钮 ----
+      '<div style="display:flex; gap:10px; align-items:center;">',
+      '<button class="edit-save-btn" id="csv-upload-btn" style="padding:10px 24px; font-size:14px;">选择CSV文件并导入</button>',
+      '<button class="edit-banner-btn" id="csv-download-template-btn2" style="padding:10px 16px; font-size:13px;">先下载模板</button>',
+      '<span id="csv-file-name" style="color:#888; font-size:12px;"></span>',
+      '</div>',
+
+      '</div>'
+    ].join("");
+
+    overlay.classList.remove("hidden");
+
+    // 下载模板按钮
+    var dlBtn = panel.querySelector("#csv-download-template-btn2");
+    if (dlBtn) dlBtn.addEventListener("click", exportCSVTemplate);
+
+    // 上传按钮
+    var uploadBtn = panel.querySelector("#csv-upload-btn");
+    if (uploadBtn) uploadBtn.addEventListener("click", function() {
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".csv,text/csv";
+      input.addEventListener("change", function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var fileNameEl = document.getElementById("csv-file-name");
+        if (fileNameEl) fileNameEl.textContent = file.name;
+
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            var mode = "merge";
+            var checked = panel.querySelector('input[name="csv-mode"]:checked');
+            if (checked) mode = checked.value;
+
+            var csvText = ev.target.result;
+            var allRows = parseCSV(csvText);
+
+            // 找表头行（跳过 # 注释行和空行）
+            var headerIdx = -1;
+            var header = null;
+            for (var i = 0; i < allRows.length; i++) {
+              var firstCell = (allRows[i][0] || "").trim();
+              if (firstCell === "" || firstCell.charAt(0) === "#") continue;
+              // 第一个非注释行 = 表头
+              headerIdx = i;
+              header = allRows[i].map(function(h) { return h.trim(); });
+              break;
+            }
+            if (!header) {
+              alert("CSV文件中没有找到有效的表头行！\n请确保第一行（注释行除外）是列名。");
+              return;
+            }
+
+            // 检查必要列
+            var hasAgentId = header.indexOf("agentId") >= 0;
+            var hasX = header.indexOf("x") >= 0;
+            if (!hasAgentId || !hasX) {
+              alert("CSV缺少必要列！\n必须包含：agentId, x, y 至少三列。");
+              return;
+            }
+
+            var map = app().getMap();
+            var lineups = app().getLineups();
+            var mapLineups = lineups[map.id] || {};
+
+            // 覆盖模式：清空
+            if (mode === "overwrite") {
+              if (!confirm("覆盖模式将清空当前地图所有技能点位数据！\n确定继续吗？")) return;
+              mapLineups = {};
+            }
+
+            var imported = 0, updated = 0, skipped = 0;
+            var dataRows = allRows.slice(headerIdx + 1);
+
+            dataRows.forEach(function(row) {
+              // 跳过空行和注释行
+              var firstCell = (row[0] || "").trim();
+              if (firstCell === "" || firstCell.charAt(0) === "#") { skipped++; return; }
+              if (row.length < 3) { skipped++; return; }
+
+              var lineup = csvRowToLineup(header, row, map.id);
+              var agentIdx = header.indexOf("agentId");
+              var agentId = agentIdx >= 0 ? (row[agentIdx] || "").trim() : "";
+              if (!agentId) { skipped++; return; }
+
+              if (!mapLineups[agentId]) mapLineups[agentId] = [];
+
+              if (mode === "merge") {
+                // 按 ID 查找现有项
+                var existIdx = -1;
+                for (var j = 0; j < mapLineups[agentId].length; j++) {
+                  if (mapLineups[agentId][j].id === lineup.id) { existIdx = j; break; }
+                }
+                if (existIdx >= 0) {
+                  mapLineups[agentId][existIdx] = lineup;
+                  updated++;
+                } else {
+                  mapLineups[agentId].push(lineup);
+                  imported++;
+                }
+              } else {
+                // append 或 overwrite 都是追加
+                mapLineups[agentId].push(lineup);
+                imported++;
+              }
+            });
+
+            lineups[map.id] = mapLineups;
+            saveDraft();
+
+            // 关闭说明面板
+            overlay.classList.add("hidden");
+
+            // 重渲染
+            if (isActive()) {
+              app().rerender();
+              setTimeout(function() { addEditToolbar(); bindCanvasEvents(); }, 100);
+            } else {
+              window.dispatchEvent(new Event("editor-data-updated"));
+            }
+
+            alert("导入完成！\n新增 " + imported + " 条，更新 " + updated + " 条，跳过 " + skipped + " 行。");
+
+          } catch (err) {
+            alert("CSV导入失败：" + err.message);
+            console.error(err);
+          }
+        };
+        reader.readAsText(file, "UTF-8");
+      });
+      input.click();
+    });
   }
 
   // ==========================================

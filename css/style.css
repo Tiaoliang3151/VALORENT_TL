@@ -1032,8 +1032,8 @@ body {
   opacity: 1;
   border-top-style: solid;
   border-top-width: 3px;
-  box-shadow: 0 0 8px var(--stand-color), 0 0 16px rgba(255, 70, 85, 0.4);
-  filter: drop-shadow(0 0 6px rgba(255, 70, 85, 0.8));
+  box-shadow: 0 0 8px var(--ability-color, #ff4655), 0 0 16px var(--ability-color, #ff4655);
+  filter: drop-shadow(0 0 6px var(--ability-color, #ff4655));
 }
 
 /* 标记高亮动画 */
@@ -1280,8 +1280,8 @@ body {
   pointer-events: auto;
   cursor: pointer;
   z-index: 4;
-  border-top: 2px solid var(--stand-color);
-  filter: drop-shadow(0 0 3px rgba(255, 70, 85, 0.6));
+  border-top: 2px solid var(--ability-color, #ff4655);
+  filter: drop-shadow(0 0 3px var(--ability-color, #ff4655));
 }
 
 .stand-line::before {
@@ -1291,9 +1291,9 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--stand-color);
+  background: var(--ability-color, #ff4655);
   transform: translateY(-50%);
-  box-shadow: 0 0 4px rgba(255, 70, 85, 0.5);
+  box-shadow: 0 0 4px var(--ability-color, #ff4655);
 }
 
 /* 侧边栏 */
@@ -1643,7 +1643,7 @@ body {
 .legend-dot.ball { background: var(--smoke-color); border: 2px solid var(--smoke-border); }
 .legend-dot.line { background: var(--line-smoke-color); border: 1px solid var(--line-smoke-border); height: 4px; border-radius: 2px; width: 20px; }
 .legend-dot.wallbang { background: var(--wallbang-color); border: 2px solid #ffa500; transform: rotate(45deg); border-radius: 2px; }
-.legend-dot.stand { width: 10px; height: 10px; border: 2px solid var(--stand-color); border-radius: 50%; background: transparent; }
+.legend-dot.stand { width: 10px; height: 10px; border: 2px solid var(--ability-color, #ff4655); border-radius: 2px; background: transparent; transform: rotate(45deg); }
 .legend-dot.ability-dot { width: 16px; height: 16px; border: 2px solid; border-radius: 50%; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; }
 
 /* ==================== 攻防标签筛选栏 ==================== */
@@ -1875,6 +1875,12 @@ body {
 
 .edit-banner-btn.danger:hover {
   background: rgba(0, 0, 0, 0.5);
+}
+
+.edit-banner-sep {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  margin: 0 2px;
 }
 
 /* 编辑工具栏 */
