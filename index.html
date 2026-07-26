@@ -191,7 +191,7 @@
   <script src="js/data/maps/haven/agents/skye.js?v=20260724e"></script>
   <script src="js/data/maps/haven/agents/kayo.js?v=20260724e"></script>
   <script src="js/data/maps/haven/agents/fade.js?v=20260724e"></script>
-  <script src="js/data/maps/haven/agents/agents/gekko.js?v=20260724e"></script>
+  <script src="js/data/maps/haven/agents/gekko.js?v=20260724e"></script>
   <script src="js/data/maps/haven/agents/phoenix.js?v=20260724e"></script>
   <script src="js/data/maps/haven/agents/jett.js?v=20260724e"></script>
   <script src="js/data/maps/haven/agents/reyna.js?v=20260724e"></script>
@@ -225,64 +225,58 @@
   <script src="js/data/maps/icebox/agents/yoru.js?v=20260724e"></script>
   <script src="js/data/maps/icebox/agents/neon.js?v=20260724e"></script>
   <script src="js/data/maps/icebox/agents/iso.js?v=20260724e"></script>
-  <script src="js/data/_index.js?v=20260724c"></script>
-
-  <!-- Diagnostic overlay: captures console errors, unhandled rejections and shows key globals -->
-  <script>
-  (function(){
-    function createPanel(){
-      if(document.getElementById('diag-panel')) return;
-      var panel = document.createElement('pre');
-      panel.id='diag-panel';
-      panel.style.cssText = 'position:fixed;left:10px;bottom:10px;right:10px;max-height:40vh;overflow:auto;z-index:2147483647;background:rgba(17,17,17,0.95);color:#fff;padding:10px;border:2px solid #ff4655;font-size:12px;font-family:monospace;display:none;white-space:pre-wrap;';
-      document.body.appendChild(panel);
-    }
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',createPanel);
-    } else createPanel();
-    function show(msg){
-      try{
-        var p = document.getElementById('diag-panel');
-        if(!p){ createPanel(); p = document.getElementById('diag-panel'); }
-        p.style.display='block';
-        var time = new Date().toLocaleTimeString();
-        p.textContent = time + ' - ' + msg + '\n\n' + p.textContent;
-      }catch(e){ console.error('diag show error', e); }
-    }
-    window.addEventListener('error', function(e){
-      var m = e && (e.message || e.error && e.error.message) || String(e);
-      var src = (e && (e.filename || (e.error && e.error.fileName))) || '';
-      var loc = (e && (e.lineno || '')) + ':' + (e && (e.colno || ''));
-      show('ERROR: ' + m + ' at ' + src + ':' + loc);
-      console.error(e.error || e.message || e);
-    });
-    window.addEventListener('unhandledrejection', function(e){
-      try{
-        var reason = e && e.reason;
-        var text = reason && (reason.stack || reason.message) || String(reason);
-        show('UNHANDLED REJECTION: ' + text);
-        console.error('unhandledrejection', reason);
-      }catch(err){ console.error(err); }
-    });
-    window.addEventListener('load', function(){
-      setTimeout(function(){
-        try{
-          var val = window.__VAL_DATA__ ? Object.keys(window.__VAL_DATA__).join(',') : String(window.__VAL_DATA__);
-          show('window.__VAL_DATA__ keys: ' + val);
-          if(window.APP_DATA){
-            var maps = (window.APP_DATA.MAPS && window.APP_DATA.MAPS.length) || 0;
-            var agents = (window.APP_DATA.AGENTS && window.APP_DATA.AGENTS.length) || 0;
-            show('window.APP_DATA present - MAPS:' + maps + ' AGENTS:' + agents);
-          } else {
-            show('window.APP_DATA is ' + String(window.APP_DATA));
-          }
-        }catch(err){ show('DIAG SERIALIZE ERROR: ' + (err && err.message)); }
-      }, 100);
-    });
-  })();
-  </script>
-
-  <script src="js/app.js?v=20260725a"></script>
-  <script src="js/editor.js?v=20260725b"></script>
-</body>
-</html>
+  <script src="js/data/maps/lotus/base.js?v=20260724f"></script>
+  <script src="js/data/maps/lotus/agents/brimstone.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/viper.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/omen.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/astra.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/harbor.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/clove.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/killjoy.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/cypher.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/sage.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/chamber.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/deadlock.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/vyse.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/sova.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/breach.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/skye.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/kayo.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/fade.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/gekko.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/phoenix.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/jett.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/reyna.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/raze.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/yoru.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/neon.js?v=20260724e"></script>
+  <script src="js/data/maps/lotus/agents/iso.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/base.js?v=20260724g"></script>
+  <script src="js/data/maps/pearl/agents/brimstone.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/viper.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/omen.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/astra.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/harbor.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/clove.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/killjoy.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/cypher.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/sage.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/chamber.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/deadlock.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/vyse.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/sova.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/breach.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/skye.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/kayo.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/fade.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/gekko.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/phoenix.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/jett.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/reyna.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/raze.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/yoru.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/neon.js?v=20260724e"></script>
+  <script src="js/data/maps/pearl/agents/iso.js?v=20260724e"></script>
+  <script src="js/data/maps/split/base.js?v=20260724g"></script>
+  <script src="js/data/maps/split/agents/brimstone.js?v=20260724e"></script>
+  <script src="js/data/maps/split/agents/viper.js?v=20260724e"></script>
