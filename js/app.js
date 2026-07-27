@@ -346,6 +346,25 @@
       // 编辑器会在enter后自己绑定
     }
 
+    // 动态计算地图图片比例，确保标记定位准确
+    const mapCanvas = document.getElementById("map-canvas");
+    const bgImg = document.querySelector(".map-bg-img");
+    
+    if (bgImg && mapCanvas) {
+      // 如果图片已加载完成，直接设置比例
+      if (bgImg.complete && bgImg.naturalWidth > 0) {
+        mapCanvas.style.aspectRatio = bgImg.naturalWidth + "/" + bgImg.naturalHeight;
+      } else {
+        // 图片还未加载，等待加载完成后再设置
+        bgImg.onload = function() {
+          mapCanvas.style.aspectRatio = this.naturalWidth + "/" + this.naturalHeight;
+          // 重新渲染标记以确保定位准确
+          renderMarkers();
+          renderLocationNames();
+        };
+      }
+    }
+
     // 渲染标记、地点名称、侧边栏
     renderMarkers();
     renderLocationNames();

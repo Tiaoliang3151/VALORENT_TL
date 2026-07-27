@@ -601,12 +601,11 @@ body {
 }
 
 /* 地图画布 - 竖向摆放，上方进攻下方防守 */
+/* aspect-ratio 由 JavaScript 动态计算，确保与图片比例一致 */
 .map-canvas {
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
-  aspect-ratio: 1 / 1;
-  min-height: 500px;
   position: relative;
   background: #0a1118;
   overflow: hidden;
@@ -637,8 +636,8 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
+  min-height: 100%;
   z-index: 0;
 }
 .map-bg-img.map-rotated {
