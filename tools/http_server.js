@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 9001;
+const PORT = 12345;
 const HOST = '127.0.0.1';
 
 const MIME = {

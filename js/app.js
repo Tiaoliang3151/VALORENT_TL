@@ -5,7 +5,12 @@
 (function () {
   "use strict";
 
-  const { ROLES, AGENTS, MAPS, LINEUPS } = window.APP_DATA;
+  // 动态获取 APP_DATA（支持懒加载更新）
+  function getAPP_DATA() { return window.APP_DATA || {}; }
+  function ROLES() { return getAPP_DATA().ROLES || {}; }
+  function AGENTS() { return getAPP_DATA().AGENTS || []; }
+  function MAPS() { return getAPP_DATA().MAPS || []; }
+  function LINEUPS() { return getAPP_DATA().LINEUPS || {}; }
   const app = document.getElementById("app");
   const detailOverlay = document.getElementById("detail-overlay");
   const detailPanel = document.getElementById("detail-panel");
@@ -70,17 +75,50 @@
     if (parts.length === 0) {
       renderHome();
     } else if (parts[0] === "map" && parts[1]) {
-      const map = MAPS.find((m) => m.id === parts[1]);
-      if (map) {
-        currentMap = map;
-        currentAgent = parts[2] || null;
-        if (currentAgent) {
-          currentTab = "agents";
-        }
-        renderMapDetail();
-      } else {
+      const mapId = parts[1];
+      // 检查地图数据是否已加载（通过检查是否有 sites 数据）
+      const map = MAPS().find((m) => m.id === mapId);
+      if (!map) {
         renderHome();
+        return;
       }
+
+      // 如果地图数据未完全加载，显示加载状态并动态加载
+      if (!map.sites) {
+        app.innerHTML = `
+          <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在加载地图数据...</div>
+          </div>
+        `;
+
+        // 动态加载地图数据
+        window.__VAL_LOAD_MAP_DATA__(mapId).then(() => {
+          // 数据加载完成，重新获取地图对象（已更新）
+          const loadedMap = MAPS().find((m) => m.id === mapId);
+          if (loadedMap) {
+            currentMap = loadedMap;
+            currentAgent = parts[2] || null;
+            if (currentAgent) {
+              currentTab = "agents";
+            }
+            renderMapDetail();
+          } else {
+            renderHome();
+          }
+        }).catch(() => {
+          renderHome();
+        });
+        return;
+      }
+
+      // 数据已加载，直接渲染
+      currentMap = map;
+      currentAgent = parts[2] || null;
+      if (currentAgent) {
+        currentTab = "agents";
+      }
+      renderMapDetail();
     } else {
       renderHome();
     }
@@ -107,7 +145,7 @@
       <div class="home-map-section" id="home-map-section">
         <h2 class="home-map-section-title">选择地图</h2>
         <div class="map-grid">
-          ${MAPS.map((map) => renderMapCard(map)).join("")}
+          ${MAPS().map((map) => renderMapCard(map)).join("")}
         </div>
       </div>
     `;
@@ -160,7 +198,7 @@
           <div class="map-card-name">${map.name}</div>
           <div class="map-card-en">${map.enName}</div>
           <div class="map-card-sites">
-            ${map.sites.map((s) => `<span class="site-badge">${s.id}点</span>`).join("")}
+            ${(map.sites || []).map((s) => `<span class="site-badge">${s.id}点</span>`).join("")}
           </div>
           <div class="map-card-desc">${map.description}</div>
         </div>
@@ -200,7 +238,7 @@
           防守烟位 (${(map.defendSmokes || []).length})
         </button>
         <button class="tab-btn ${currentTab === "wallbangs" ? "active" : ""}" data-tab="wallbangs">
-          穿墙点位 (${map.wallbangs.length})
+          穿墙点位 (${(map.wallbangs || []).length})
         </button>
         <button class="tab-btn ${currentTab === "plants" ? "active" : ""}" data-tab="plants">
           下包点位 (${(map.plantSpots || []).length})
@@ -703,7 +741,7 @@
       return;
     }
 
-    const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+    const lineups = (LINEUPS()[currentMap.id] && LINEUPS()[currentMap.id][currentAgent]) || [];
     if (lineups.length === 0) {
       return;
     }
@@ -717,7 +755,7 @@
       return;
     }
 
-    const agent = AGENTS.find((a) => a.id === currentAgent);
+    const agent = AGENTS().find((a) => a.id === currentAgent);
     if (!agent) return;
 
     // 渲染筛选后的点位
@@ -822,7 +860,7 @@
     const roleFilterHtml = `
       <div class="role-filter">
         <button class="role-btn ${currentRoleFilter === "all" ? "active" : ""}" data-role="all">全部</button>
-        ${Object.entries(ROLES).map(([key, role]) => `
+        ${Object.entries(ROLES()).map(([key, role]) => `
           <button class="role-btn ${currentRoleFilter === key ? "active" : ""}"
                   data-role="${key}"
                   style="--role-color: ${role.color}">
@@ -833,14 +871,14 @@
     `;
 
     const filteredAgents = currentRoleFilter === "all"
-      ? AGENTS
-      : AGENTS.filter((a) => a.role === currentRoleFilter);
+      ? AGENTS()
+      : AGENTS().filter((a) => a.role === currentRoleFilter);
 
     const agentListHtml = `
       <div class="agent-list">
         ${filteredAgents.map((agent) => {
-          const hasLineup = LINEUPS[currentMap.id] && LINEUPS[currentMap.id][agent.id] && LINEUPS[currentMap.id][agent.id].length > 0;
-          const roleColor = ROLES[agent.role].color;
+          const hasLineup = LINEUPS()[currentMap.id] && LINEUPS()[currentMap.id][agent.id] && LINEUPS()[currentMap.id][agent.id].length > 0;
+          const roleColor = ROLES()[agent.role].color;
           return `
             <div class="agent-card ${currentAgent === agent.id ? "active" : ""} ${hasLineup ? "has-lineup" : ""}"
                  data-agent-id="${agent.id}"
@@ -857,8 +895,8 @@
 
     let lineupListHtml = "";
     if (currentAgent) {
-      const agent = AGENTS.find((a) => a.id === currentAgent);
-      const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+      const agent = AGENTS().find((a) => a.id === currentAgent);
+      const lineups = (LINEUPS()[currentMap.id] && LINEUPS()[currentMap.id][currentAgent]) || [];
 
       if (lineups.length > 0) {
         // 统计各技能数量
@@ -986,7 +1024,7 @@
   function getAgentAbilityName(abilityKey, lineupAbilityName) {
     if (lineupAbilityName) return `${abilityKey} ${lineupAbilityName}`;
     if (!currentAgent || !abilityKey) return abilityKey;
-    const agent = AGENTS.find((a) => a.id === currentAgent);
+    const agent = AGENTS().find((a) => a.id === currentAgent);
     if (!agent) return abilityKey;
     const ability = agent.abilities.find((ab) => ab.key === abilityKey);
     return ability ? `${ability.key} ${ability.name}` : abilityKey;
@@ -994,7 +1032,7 @@
 
   // 生成中文点位标题
   function getLineupTitle(lineup) {
-    const agent = AGENTS.find((a) => a.id === currentAgent);
+    const agent = AGENTS().find((a) => a.id === currentAgent);
     // 优先使用 lineup 数据中的 abilityName（从原始数据转换的中文名）
     const abilityName = lineup.abilityName || 
       (agent ? (agent.abilities.find((ab) => ab.key === lineup.ability)?.name || lineup.ability) : lineup.ability);
@@ -1036,7 +1074,7 @@
       ];
       // 如果选了英雄，加上技能键位图例
       if (currentAgent) {
-        const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+        const lineups = (LINEUPS()[currentMap.id] && LINEUPS()[currentMap.id][currentAgent]) || [];
         const abilities = [...new Set(lineups.map((l) => l.ability))];
         abilities.forEach((ab) => {
           items.push({ cls: "ability-" + ab, label: ab + "键", abilityKey: ab });
@@ -1200,7 +1238,7 @@
     } else if (currentTab === "plants") {
       return (currentMap.plantSpots || []).find((p) => p.id === itemId);
     } else if (currentTab === "agents" && currentAgent) {
-      const lineups = (LINEUPS[currentMap.id] && LINEUPS[currentMap.id][currentAgent]) || [];
+      const lineups = (LINEUPS()[currentMap.id] && LINEUPS()[currentMap.id][currentAgent]) || [];
       return lineups.find((l) => l.id === itemId);
     }
     return null;
@@ -1351,10 +1389,10 @@
   }
 
   function renderLineupDetail(lineup) {
-    const agent = AGENTS.find((a) => a.id === currentAgent);
+    const agent = AGENTS().find((a) => a.id === currentAgent);
     const ability = agent ? agent.abilities.find((ab) => ab.key === lineup.ability) : null;
     const typeLabel = getTypeLabel(lineup.type);
-    const roleColor = agent ? ROLES[agent.role].color : "#ff4655";
+    const roleColor = agent ? ROLES()[agent.role].color : "#ff4655";
     const chineseTitle = getLineupTitle(lineup);
 
     return `
@@ -1473,7 +1511,7 @@
         <span class="item-en">HOME</span>
       </a>
       <div class="nav-dropdown-divider"></div>
-      ${MAPS.map((map) => `
+      ${MAPS().map((map) => `
         <a class="nav-dropdown-item" href="#/map/${map.id}" data-map-id="${map.id}">
           <span>${map.name}</span>
           <span class="item-en">${map.enName.toUpperCase()}</span>
@@ -1543,11 +1581,11 @@
     getAgent: () => currentAgent,
     setAgent: (a) => { currentAgent = a; },
     setAbilityFilter: (f) => { currentAbilityFilter = f; },
-    getLineups: () => LINEUPS,
+    getLineups: () => LINEUPS(),
     rerender: () => renderMapDetail(),
     renderMarkers: () => renderMarkers(),
     renderSidebar: () => renderSidebar(),
-    getData: () => ({ MAPS, AGENTS, LINEUPS, ROLES }),
+    getData: () => ({ MAPS: MAPS(), AGENTS: AGENTS(), LINEUPS: LINEUPS(), ROLES: ROLES() }),
     showDetail: (item, type) => showDetail(item, type),
     ABILITY_COLORS: ABILITY_COLORS,
     reloadLabels: reloadLocationLabels,
