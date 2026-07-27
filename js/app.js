@@ -25,7 +25,8 @@
   let currentSideFilter = "all"; // all | 进攻方 | 防守方 | 双通
 
   // 进攻视图开关（切到 "进攻烟位" 时自动为 true，其余为 false；true 时所有坐标走 getMapPos 翻转 180°）
-  let isAttackView = false;
+  // 初始值与 currentTab 保持同步
+  let isAttackView = (currentTab === "smoke-attack");
 
   // 地点名称显示状态
   let showLocationNames = true;
@@ -100,7 +101,9 @@
             currentMap = loadedMap;
             currentAgent = parts[2] || null;
             if (currentAgent) {
-              currentTab = "agents";
+              setCurrentTab("agents");
+            } else {
+              setCurrentTab(currentTab); // 确保 isAttackView 与 currentTab 同步
             }
             renderMapDetail();
           } else {
@@ -116,7 +119,9 @@
       currentMap = map;
       currentAgent = parts[2] || null;
       if (currentAgent) {
-        currentTab = "agents";
+        setCurrentTab("agents");
+      } else {
+        setCurrentTab(currentTab); // 确保 isAttackView 与 currentTab 同步
       }
       renderMapDetail();
     } else {
